@@ -79,7 +79,7 @@ export function Card({
     <>
       <span className={`absolute inset-y-0 left-0 w-1 bg-gradient-to-b ${accents[accent]}`} />
       <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-stone-500">{title}</p>
-      <p className="mt-2 font-serif text-3xl tracking-tight text-stone-900">{value}</p>
+      <p className="mt-2 font-serif text-3xl tabular-nums tracking-tight text-stone-900">{value}</p>
       {hint ? <p className="mt-1.5 text-xs leading-relaxed text-stone-500">{hint}</p> : null}
     </>
   );
@@ -211,7 +211,7 @@ export function State({
   action?: React.ReactNode;
 }) {
   const copy = {
-    loading: { title: "Reading the field…", body: text || "Pulling the latest farm, visit, and payment records." },
+    loading: { title: "Opening the register…", body: text || "Pulling farms, visits, and M-Pesa quotes." },
     empty: {
       title: title || "No records in this view",
       body: text || "Farmers, visits, and quotes appear here once USSD, SMS, or staff activity starts.",
@@ -273,7 +273,7 @@ export function Table({
       <div className="overflow-x-auto">
         <table className="min-w-full text-left text-sm">
           {caption ? <caption className="sr-only">{caption}</caption> : null}
-          <thead className="sticky top-0 bg-cream-50 text-[11px] uppercase tracking-[0.12em] text-stone-500">
+          <thead className="sticky top-0 border-b border-forest-900/10 bg-forest-950/[0.04] text-[11px] uppercase tracking-[0.12em] text-stone-600">
             <tr>
               {headers.map((header) => (
                 <th key={header || "actions"} scope="col" className="whitespace-nowrap px-4 py-3 font-semibold">

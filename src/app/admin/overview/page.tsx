@@ -21,9 +21,9 @@ type Overview = {
 
 const BANDS = [
   { name: "Micro", hint: "Complimentary", accent: "stone" as const },
-  { name: "Small", hint: "KES 50 / month", accent: "forest" as const },
-  { name: "Medium", hint: "KES 150 / month", accent: "forest" as const },
-  { name: "Large", hint: "Capped at KES 400", accent: "gold" as const },
+  { name: "Small", hint: "KSh 20 / month", accent: "forest" as const },
+  { name: "Medium", hint: "KSh 40 / month", accent: "forest" as const },
+  { name: "Large", hint: "Capped at KSh 70", accent: "gold" as const },
 ];
 
 export default function OverviewPage() {

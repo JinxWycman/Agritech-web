@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { allowedBackendPath, rewriteSetCookie, stripRefreshFromStaffPayload } from "@/lib/backend-allow";
 
+/**
+ * Same-origin proxy: browser → this Next.js route → FastAPI.
+ * Stops CORS lag and keeps USSD/SMS off this website.
+ */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 20;

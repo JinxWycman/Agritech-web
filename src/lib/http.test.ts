@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { formatApiDetail, isStaffRole, staffHome } from "./http.ts";
+import { formatApiDetail, isStaffRole, safeNextPath, staffHome } from "./http.ts";
 
 describe("staffHome", () => {
   it("maps only the two staff roles to known paths", () => {
@@ -15,6 +15,18 @@ describe("staffHome", () => {
     assert.equal(isStaffRole("platform_admin"), true);
     assert.equal(isStaffRole("officer"), true);
     assert.equal(isStaffRole("superuser"), false);
+  });
+});
+
+describe("safeNextPath", () => {
+  it("allows in-app staff routes and blocks open redirects", () => {
+    assert.equal(safeNextPath("/admin/farmers"), "/admin/farmers");
+    assert.equal(safeNextPath("/officer/requests"), "/officer/requests");
+    assert.equal(safeNextPath("https://evil.example/admin"), null);
+    assert.equal(safeNextPath("//evil.example"), null);
+    assert.equal(safeNextPath("/login"), null);
+    assert.equal(safeNextPath("/admin/../ussd"), null);
+    assert.equal(safeNextPath("/admin/overview", "officer"), "/officer/overview");
   });
 });
 

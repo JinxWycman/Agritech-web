@@ -1,3 +1,9 @@
+/**
+ * Staff console helpers that do not talk to the network.
+ *
+ * Roles: platform_admin (HQ) and officer (field / vet visits).
+ * Farmers never sign in here — they use USSD *384# / SMS 3797.
+ */
 export const STAFF_HOME = {
   platform_admin: "/admin/overview",
   officer: "/officer/overview",
@@ -11,6 +17,17 @@ export function isStaffRole(value: string | null | undefined): value is StaffRol
 
 export function staffHome(role: string | null | undefined): string | null {
   return isStaffRole(role) ? STAFF_HOME[role] : null;
+}
+
+/** After login, only bounce back to our own /admin or /officer URLs — never to another website. */
+export function safeNextPath(value: string | null | undefined, role?: string | null): string | null {
+  if (!value || value.length > 180) return null;
+  if (!value.startsWith("/") || value.startsWith("//") || value.includes("\\") || value.includes("://")) return null;
+  const pathOnly = value.split("?")[0];
+  if (pathOnly.includes("..") || pathOnly.includes("#")) return null;
+  if (!pathOnly.startsWith("/admin") && !pathOnly.startsWith("/officer")) return null;
+  if (role === "officer" && pathOnly.startsWith("/admin")) return STAFF_HOME.officer;
+  return value;
 }
 
 type ValidationIssue = { loc?: unknown; msg?: unknown };

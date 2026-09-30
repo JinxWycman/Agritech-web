@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, LoadError, Notice, Panel, State } from "@/components/ui";
+import { kes } from "@/lib/format";
 import Link from "next/link";
 
 type Detail = {
@@ -89,7 +90,7 @@ export default function FarmerDetailPage() {
         <Card
           title="Quote class"
           value={farmer.size_class || "—"}
-          hint={farmer.amount_kes != null ? `Monthly ${farmer.amount_kes === 0 ? "complimentary" : `KES ${farmer.amount_kes}`}` : "No live quote"}
+          hint={farmer.amount_kes != null ? `Monthly ${farmer.amount_kes === 0 ? "complimentary" : kes(farmer.amount_kes)}` : "No live quote"}
         />
       </div>
       <div className="grid gap-4 md:grid-cols-2">

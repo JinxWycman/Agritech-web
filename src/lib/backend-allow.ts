@@ -1,3 +1,7 @@
+/**
+ * Allow-list for the Next.js /backend proxy.
+ * USSD, SMS, and M-Pesa must stay on the API host — this site must not forward them.
+ */
 const STAFF_PATHS = new Set(["/staff/login", "/staff/refresh", "/staff/me", "/staff/logout"]);
 
 export function allowedBackendPath(segments: string[]): string | null {
@@ -22,6 +26,7 @@ export function allowedBackendPath(segments: string[]): string | null {
   return null;
 }
 
+/** Refresh tokens belong in the HttpOnly cookie, not in JavaScript. */
 export function stripRefreshFromStaffPayload(path: string, body: unknown): unknown {
   if (path !== "/staff/login" && path !== "/staff/refresh") return body;
   if (!body || typeof body !== "object" || Array.isArray(body)) return body;
@@ -30,6 +35,7 @@ export function stripRefreshFromStaffPayload(path: string, body: unknown): unkno
   return rest;
 }
 
+/** Cookie Path=/staff on FastAPI becomes Path=/backend/staff on this site. */
 export function rewriteSetCookie(header: string, https: boolean): string {
   let next = header.replace(/;\s*Path=\/staff(?=;|$)/gi, "; Path=/backend/staff");
   if (https && !/;\s*Secure(?=;|$)/i.test(next)) next += "; Secure";

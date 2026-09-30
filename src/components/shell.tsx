@@ -101,7 +101,7 @@ const PAGE_COPY: Record<string, { title: string; description: string }> = {
   },
   "/admin/pricing": {
     title: "Size bands",
-    description: "Acre and TLU bands that set monthly fees. Large is capped at KES 400.",
+    description: "Acre and TLU bands. Paid farms are KSh 20, 40, or 70 a month.",
   },
   "/admin/subscriptions": {
     title: "Subscriptions",
@@ -109,7 +109,7 @@ const PAGE_COPY: Record<string, { title: string; description: string }> = {
   },
   "/admin/sms-sessions": {
     title: "USSD / SMS",
-    description: "Live and recent conversations on 3797.",
+    description: "Live and recent conversations on 3797 and *384#.",
   },
   "/admin/audit": {
     title: "Audit trail",
@@ -135,6 +135,28 @@ function pageMeta(pathname: string) {
     return { title: "Farm file", description: "Land, herd, identity, and visit history for this farmer." };
   }
   return { title: "Agritech AI", description: "Agricultural operations" };
+}
+
+function KenyaClock() {
+  const [now, setNow] = useState("");
+  useEffect(() => {
+    const tick = () =>
+      setNow(
+        new Date().toLocaleString("en-KE", {
+          timeZone: "Africa/Nairobi",
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      );
+    tick();
+    const id = window.setInterval(tick, 30_000);
+    return () => window.clearInterval(id);
+  }, []);
+  if (!now) return null;
+  return <span className="tabular-nums">{now} EAT</span>;
 }
 
 function Mark() {
@@ -186,7 +208,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const isOfficer = role === "officer" || (role === null && onOfficerRoute);
   const groups = isOfficer ? OFFICER_GROUPS : ADMIN_GROUPS;
   const meta = pageMeta(pathname);
-  const roleLabel = isOfficer ? "Field officer" : role === "platform_admin" || role === null ? "Platform ops" : "Staff";
+  const roleLabel = isOfficer ? "Field officer" : role === "platform_admin" || role === null ? "HQ Kenya" : "Staff";
   useEffect(() => {
     document.title = `${meta.title} · Agritech AI`;
   }, [meta.title]);
@@ -223,7 +245,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         Skip to content
       </a>
       <div className="flex min-h-screen">
-        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-forest-950 px-4 py-5 text-cream-50 lg:flex">
+        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-forest-900 bg-forest-950 px-4 py-5 text-cream-50 lg:flex">
           <div className="flex items-center gap-3 px-1">
             <Mark />
             <div>
@@ -245,9 +267,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
                       onMouseEnter={() => prefetch(link.href)}
                       onFocus={() => prefetch(link.href)}
                       aria-current={isActive(link.href) ? "page" : undefined}
-                      className={`block rounded-xl px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cream-100 ${
+                      className={`block rounded-md px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cream-100 ${
                         isActive(link.href)
-                          ? "bg-white/10 font-medium text-white shadow-sm"
+                          ? "bg-white/10 font-medium text-white"
                           : "text-forest-100 hover:bg-white/5 hover:text-white"
                       }`}
                     >
@@ -258,17 +280,20 @@ export function Shell({ children }: { children: React.ReactNode }) {
               </div>
             ))}
           </nav>
-          <button
-            type="button"
-            className="mt-4 rounded-xl px-3 py-2 text-left text-sm text-forest-200 transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cream-100"
-            onClick={signOut}
-          >
-            Sign out
-          </button>
+          <div className="mt-3 border-t border-white/10 pt-3">
+            <p className="px-2 text-[10px] leading-relaxed text-forest-300">USSD *384# · SMS 3797 · KSh</p>
+            <button
+              type="button"
+              className="mt-2 w-full rounded-md px-3 py-2 text-left text-sm text-forest-200 transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cream-100"
+              onClick={signOut}
+            >
+              Sign out
+            </button>
+          </div>
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 border-b border-stone-200/80 bg-cream-50/90 px-4 py-4 backdrop-blur-md md:px-8">
+          <header className="sticky top-0 z-20 border-b border-stone-400/20 bg-[var(--paper)]/92 px-4 py-4 backdrop-blur-md md:px-8">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <div className="mb-1 flex items-center gap-2 lg:hidden">
@@ -283,9 +308,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 <h1 className="truncate text-xl font-semibold tracking-tight text-stone-900">{meta.title}</h1>
                 <p className="mt-0.5 max-w-2xl text-sm leading-relaxed text-stone-500">{meta.description}</p>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <span className="hidden rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-forest-800 ring-1 ring-forest-100 sm:inline">
-                  {isOfficer ? "Field" : "Kenya ops"}
+              <div className="flex shrink-0 flex-col items-end gap-2">
+                <span className="hidden text-[11px] text-stone-500 sm:inline">
+                  <KenyaClock />
+                </span>
+                <span className="hidden rounded border border-forest-800/20 bg-forest-50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-forest-900 sm:inline">
+                  {isOfficer ? "Field" : "Kenya HQ"}
                 </span>
                 <button
                   type="button"
@@ -324,7 +352,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </header>
           {!online ? (
             <p role="status" className="bg-soil-600 px-4 py-2 text-sm text-cream-50 md:px-8">
-              You are offline. Records will not refresh until the connection returns.
+              You are offline. The register will not refresh until the line comes back.
             </p>
           ) : null}
           <main id="main" className="mx-auto w-full max-w-6xl flex-1 space-y-5 p-4 md:p-8">

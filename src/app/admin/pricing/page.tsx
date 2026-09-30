@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { Badge, LoadError, Panel, State } from "@/components/ui";
+import { kes } from "@/lib/format";
 
 type Rule = {
   version: number;
@@ -36,7 +37,7 @@ export default function PricingPage() {
                 <span className="text-stone-500">
                   {band.min_acres}–{band.max_acres ?? "∞"} acres
                 </span>
-                <span className="font-serif text-lg text-forest-800">KES {band.kes}</span>
+                <span className="font-serif text-lg tabular-nums text-forest-800">{kes(band.kes)}</span>
               </li>
             ))}
           </ul>

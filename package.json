@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/lib/http.test.ts src/lib/backend-allow.test.ts"
+    "test": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/lib/http.test.ts src/lib/backend-allow.test.ts src/lib/phone.test.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.0",

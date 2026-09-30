@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     default: "Agritech AI",
     template: "%s · Agritech AI",
   },
-  description: "Agritech AI staff dashboard",
+  description: "Kenya staff desk for farm quotes, field visits, and 3797 / *384#.",
 };
 
 export default function RootLayout({
@@ -28,10 +28,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${instrument.variable} font-sans antialiased`}
-      >
+    <html lang="en-KE">
+      <body className={`${geistSans.variable} ${instrument.variable} font-sans antialiased`}>
         <Providers>{children}</Providers>
       </body>
     </html>

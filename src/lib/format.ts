@@ -1,8 +1,13 @@
+/**
+ * Money and dates the way Kenyan staff actually read them.
+ * KSh = Kenyan shilling on receipts / M-Pesa. Times are East Africa Time.
+ */
+
 export function kes(value: number | string | null | undefined): string {
   if (value === null || value === undefined || value === "") return "—";
   const amount = typeof value === "number" ? value : Number(value);
   if (Number.isNaN(amount)) return String(value);
-  return `KES ${amount.toLocaleString("en-KE")}`;
+  return `KSh ${amount.toLocaleString("en-KE")}`;
 }
 
 export function when(value: string | null | undefined): string {
@@ -10,6 +15,7 @@ export function when(value: string | null | undefined): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleString("en-KE", {
+    timeZone: "Africa/Nairobi",
     day: "numeric",
     month: "short",
     hour: "2-digit",

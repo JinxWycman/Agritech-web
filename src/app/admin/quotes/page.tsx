@@ -87,7 +87,7 @@ export default function QuotesPage() {
 
       <Panel className="p-5 md:p-6">
         <p className="mb-4 text-sm text-stone-600">
-          Class is the higher of crop acres and livestock TLU. Cattle count as 1 TLU, goats and sheep 0.15, poultry 0.01. Monthly fee never exceeds KES 400.
+          Class is the higher of crop acres and livestock TLU. Cattle count as 1 TLU, goats and sheep 0.15, poultry 0.01. Paid bands are KSh 20, 40, and 70.
         </p>
         <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 xl:items-end">
           <Field label="Acres" hint="Crop land in production">

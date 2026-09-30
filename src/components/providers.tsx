@@ -6,6 +6,7 @@ import { bootstrapSession } from "@/lib/api";
 import { ApiError } from "@/lib/http";
 
 function shouldRetry(failureCount: number, error: unknown) {
+  // Do not hammer the API when the password is wrong or the role is forbidden.
   if (error instanceof ApiError && error.status >= 400 && error.status < 500) return false;
   return failureCount < 1;
 }

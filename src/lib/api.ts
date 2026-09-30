@@ -1,4 +1,11 @@
-import { ApiError, OFFLINE_MESSAGE, formatApiDetail, isStaffRole } from "@/lib/http";
+/**
+ * How the browser talks to FastAPI.
+ *
+ * Pages call api("/admin/overview") — never the Render URL directly.
+ * Next.js forwards /backend/... to NEXT_PUBLIC_API_URL. The API still checks the JWT.
+ * Access token stays in memory. Refresh token stays in an HttpOnly cookie.
+ */
+import { ApiError, OFFLINE_MESSAGE, formatApiDetail, isStaffRole, safeNextPath } from "@/lib/http";
 
 const PROXY = "/backend";
 const REQUEST_TIMEOUT_MS = 12_000;
@@ -114,9 +121,9 @@ export async function bootstrapSession(): Promise<string | null> {
 
 function expireSession() {
   clearSession();
-  if (typeof window !== "undefined" && window.location.pathname !== "/login") {
-    window.location.assign("/login");
-  }
+  if (typeof window === "undefined" || window.location.pathname === "/login") return;
+  const next = safeNextPath(`${window.location.pathname}${window.location.search}`);
+  window.location.assign(next ? `/login?next=${encodeURIComponent(next)}` : "/login");
 }
 
 export async function api<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
