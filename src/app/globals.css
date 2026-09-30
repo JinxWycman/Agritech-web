@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #f4efe4;
+  --foreground: #1c1917;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  color: var(--foreground);
+  background:
+    radial-gradient(1200px 500px at 0% -10%, rgba(47, 111, 82, 0.08), transparent 55%),
+    radial-gradient(900px 400px at 100% 0%, rgba(169, 132, 91, 0.08), transparent 45%),
+    var(--background);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer components {
+  .field-input {
+    @apply w-full rounded-xl border border-stone-300/90 bg-white px-3.5 py-2.5 text-sm text-stone-800 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-forest-500 focus:ring-4 focus:ring-forest-500/15;
+  }
+
+  .panel {
+    @apply rounded-2xl border border-stone-200/80 bg-white shadow-panel;
+  }
+
+  .nav-scroll {
+    scrollbar-width: none;
+  }
+
+  .nav-scroll::-webkit-scrollbar {
+    display: none;
+  }
+}

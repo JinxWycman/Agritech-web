@@ -1,0 +1,186 @@
+import { ApiError, OFFLINE_MESSAGE, formatApiDetail, isStaffRole } from "@/lib/http";
+
+const PROXY = "/backend";
+const REQUEST_TIMEOUT_MS = 12_000;
+const ACCESS_KEY = "agritech_staff_access";
+const ROLE_KEY = "agritech_staff_role";
+
+export type Page<T> = {
+  items: T[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+let accessToken: string | null = null;
+let refreshInFlight: Promise<string | null> | null = null;
+
+function forgetLegacyStorage() {
+  if (typeof window === "undefined") return;
+  sessionStorage.removeItem(ACCESS_KEY);
+  sessionStorage.removeItem(ROLE_KEY);
+}
+
+export function getAccessToken(): string | null {
+  return accessToken;
+}
+
+export function getStaffRole(): string | null {
+  if (typeof window === "undefined") return null;
+  return getCookie("staff_role");
+}
+
+function writeRoleCookie(role: string) {
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `staff_role=${encodeURIComponent(role)}; Path=/; Max-Age=${60 * 60 * 24 * 14}; SameSite=Lax${secure}`;
+}
+
+export function setSession(nextAccessToken: string, role: string) {
+  if (!isStaffRole(role)) return;
+  accessToken = nextAccessToken;
+  writeRoleCookie(role);
+}
+
+export function clearSession() {
+  accessToken = null;
+  forgetLegacyStorage();
+  if (typeof window === "undefined") return;
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `staff_role=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
+}
+
+function getCookie(name: string): string | null {
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+async function readDetail(response: Response, fallback: string): Promise<string> {
+  try {
+    const body = (await response.json()) as { detail?: unknown };
+    return formatApiDetail(body.detail, fallback);
+  } catch {
+    return fallback || response.statusText || "Request failed";
+  }
+}
+
+async function timedFetch(url: string, init: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(url, {
+      ...init,
+      signal: init.signal ?? controller.signal,
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(OFFLINE_MESSAGE, 0);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function refreshAccess(): Promise<string | null> {
+  if (refreshInFlight) return refreshInFlight;
+  refreshInFlight = (async () => {
+    let response: Response;
+    try {
+      response = await timedFetch(`${PROXY}/staff/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+    } catch {
+      return null;
+    }
+    if (!response.ok) return null;
+    const data = (await response.json()) as { access_token?: string; role?: string };
+    if (!data.access_token || !isStaffRole(data.role)) return null;
+    setSession(data.access_token, data.role);
+    return data.access_token;
+  })().finally(() => {
+    refreshInFlight = null;
+  });
+  return refreshInFlight;
+}
+
+export async function bootstrapSession(): Promise<string | null> {
+  forgetLegacyStorage();
+  if (accessToken) return accessToken;
+  if (typeof window !== "undefined" && !getCookie("staff_role")) return null;
+  return refreshAccess();
+}
+
+function expireSession() {
+  clearSession();
+  if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+    window.location.assign("/login");
+  }
+}
+
+export async function api<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
+  const headers = new Headers(options.headers);
+  if (!headers.has("Content-Type") && options.body) {
+    headers.set("Content-Type", "application/json");
+  }
+  const token = getAccessToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+
+  let response: Response;
+  try {
+    response = await timedFetch(`${PROXY}${path}`, { ...options, headers });
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(OFFLINE_MESSAGE, 0);
+  }
+
+  if (response.status === 401 && !retried && path !== "/staff/refresh") {
+    const next = await refreshAccess();
+    if (next) return api<T>(path, options, true);
+    expireSession();
+    throw new ApiError("Session expired. Sign in again.", 401);
+  }
+
+  if (!response.ok) {
+    const fallback = response.statusText || "Request failed";
+    throw new ApiError(await readDetail(response, fallback), response.status);
+  }
+
+  if (response.status === 204) return undefined as T;
+  return response.json() as Promise<T>;
+}
+
+export async function loginStaff(phone_number: string, password: string) {
+  let response: Response;
+  try {
+    response = await timedFetch(`${PROXY}/staff/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone_number, password }),
+    });
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(OFFLINE_MESSAGE, 0);
+  }
+  if (!response.ok) {
+    throw new ApiError(await readDetail(response, "Login failed"), response.status);
+  }
+  const data = (await response.json()) as { access_token: string; role: string };
+  if (!isStaffRole(data.role) || !data.access_token) {
+    throw new ApiError("This account cannot open the staff console.", 403);
+  }
+  setSession(data.access_token, data.role);
+  return data;
+}
+
+export async function logoutStaff() {
+  try {
+    await timedFetch(`${PROXY}/staff/logout`, { method: "POST" });
+  } catch {
+    /* still clear the local session */
+  }
+  clearSession();
+}
+
+export { ApiError };

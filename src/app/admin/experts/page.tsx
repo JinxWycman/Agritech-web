@@ -1,0 +1,309 @@
+"use client";
+
+import { FormEvent, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api, type Page } from "@/lib/api";
+import { Badge, Button, Field, LoadError, Notice, Pager, Panel, Section, State, Table } from "@/components/ui";
+
+type Expert = {
+  id: string;
+  full_name: string;
+  phone_number: string;
+  expert_type: string;
+  organization: string;
+  county_id: string;
+  is_available: boolean;
+};
+
+type StaffUser = {
+  id: string;
+  full_name: string;
+  phone_number: string;
+  role: string;
+  expert_id: string | null;
+  is_active: boolean;
+};
+
+type County = {
+  id: string;
+  name: string;
+};
+
+type FieldOfficerResult = {
+  expert: Expert;
+  staff: StaffUser;
+};
+
+const PAGE_SIZE = 20;
+const DISCIPLINES = ["Agriculture", "Veterinary"] as const;
+const DEV_COUNTY_FALLBACK = process.env.NODE_ENV === "development";
+
+function consoleAccess(expertId: string, staffByExpert: Map<string, StaffUser>) {
+  const login = staffByExpert.get(expertId);
+  if (!login) {
+    return {
+      label: "Directory only",
+      hint: "USSD listing without a staff login",
+      tone: "zinc" as const,
+    };
+  }
+  if (!login.is_active) {
+    return { label: "Console disabled", hint: "Staff login is inactive", tone: "amber" as const };
+  }
+  return { label: "Console access", hint: "Can sign in at /login", tone: "green" as const };
+}
+
+export default function ExpertsPage() {
+  const client = useQueryClient();
+  const [offset, setOffset] = useState(0);
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [organization, setOrganization] = useState("");
+  const [discipline, setDiscipline] = useState<(typeof DISCIPLINES)[number]>("Agriculture");
+  const [countyId, setCountyId] = useState("");
+  const [saved, setSaved] = useState("");
+
+  const counties = useQuery({
+    queryKey: ["counties"],
+    queryFn: () => api<County[]>("/admin/counties"),
+    staleTime: 300_000,
+  });
+  const experts = useQuery({
+    queryKey: ["experts", offset],
+    queryFn: () => api<Page<Expert>>(`/admin/experts?limit=${PAGE_SIZE}&offset=${offset}`),
+  });
+  const staff = useQuery({
+    queryKey: ["staff"],
+    queryFn: () => api<Page<StaffUser>>("/admin/staff"),
+  });
+
+  const countyMap = useMemo(() => new Map((counties.data || []).map((row) => [row.id, row.name])), [counties.data]);
+
+  const staffByExpert = useMemo(() => {
+    const map = new Map<string, StaffUser>();
+    for (const row of staff.data?.items || []) {
+      if (row.expert_id && row.role === "officer") map.set(row.expert_id, row);
+    }
+    return map;
+  }, [staff.data]);
+
+  const createOfficer = useMutation({
+    mutationFn: () =>
+      api<FieldOfficerResult>("/admin/field-officers", {
+        method: "POST",
+        body: JSON.stringify({
+          full_name: fullName.trim(),
+          phone_number: phone.trim(),
+          password,
+          expert_type: discipline,
+          county_id: countyId,
+          organization: organization.trim(),
+          is_available: false,
+        }),
+      }),
+    onSuccess: (data) => {
+      setSaved(
+        `${data.expert.full_name} has a USSD directory profile and console access. They sign in at /login with the phone and password you set, then go on duty from the officer desk.`,
+      );
+      setFullName("");
+      setPhone("");
+      setPassword("");
+      setOrganization("");
+      setCountyId("");
+      client.invalidateQueries({ queryKey: ["experts"] });
+      client.invalidateQueries({ queryKey: ["staff"] });
+    },
+  });
+
+  function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    setSaved("");
+    createOfficer.mutate();
+  }
+
+  const countyOptions = counties.data || [];
+  const showDevCountyUuid =
+    DEV_COUNTY_FALLBACK && !counties.isLoading && !counties.isError && countyOptions.length === 0;
+  const countyReady = countyOptions.length > 0 || showDevCountyUuid;
+  const formValid =
+    fullName.trim().length >= 3 &&
+    phone.trim().length >= 10 &&
+    password.length >= 8 &&
+    organization.trim().length >= 2 &&
+    Boolean(countyId);
+
+  if (experts.isLoading && !experts.data) return <State kind="loading" />;
+  if (experts.isError) return <LoadError error={experts.error} onRetry={() => experts.refetch()} />;
+
+  return (
+    <div className="space-y-8">
+      <Section eyebrow="Roster" title="Add a field officer">
+        <Panel className="p-5 md:p-6">
+          <p className="mb-4 text-sm leading-relaxed text-stone-600">
+            One action creates two linked records: an <strong className="font-medium text-stone-800">Expert</strong> for
+            USSD and farmer requests, and a <strong className="font-medium text-stone-800">StaffUser</strong> officer
+            login tied through <span className="font-mono text-xs">expert_id</span>. Platform admin accounts are not
+            created here.
+          </p>
+          {!countyReady && !counties.isLoading ? (
+            <State
+              kind="empty"
+              title="Counties are not loaded"
+              text="Run county seeds or migrations so the admin county list is available before adding officers."
+            />
+          ) : (
+            <form onSubmit={onSubmit} className="grid gap-4 md:grid-cols-2">
+              <Field label="Full name">
+                <input
+                  className="field-input"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  minLength={3}
+                  maxLength={150}
+                  required
+                  disabled={createOfficer.isPending}
+                />
+              </Field>
+              <Field label="Phone" hint="Same number for USSD, visits, and /login">
+                <input
+                  className="field-input"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+2547… or 07…"
+                  inputMode="tel"
+                  minLength={10}
+                  maxLength={20}
+                  required
+                  disabled={createOfficer.isPending}
+                />
+              </Field>
+              <Field label="Initial password" hint="At least 8 characters">
+                <input
+                  type="password"
+                  className="field-input"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  minLength={8}
+                  maxLength={128}
+                  autoComplete="new-password"
+                  required
+                  disabled={createOfficer.isPending}
+                />
+              </Field>
+              <Field label="Organisation">
+                <input
+                  className="field-input"
+                  value={organization}
+                  onChange={(e) => setOrganization(e.target.value)}
+                  placeholder="e.g. County extension"
+                  minLength={2}
+                  maxLength={150}
+                  required
+                  disabled={createOfficer.isPending}
+                />
+              </Field>
+              <Field label="Discipline">
+                <select
+                  className="field-input"
+                  value={discipline}
+                  onChange={(e) => setDiscipline(e.target.value as (typeof DISCIPLINES)[number])}
+                  disabled={createOfficer.isPending}
+                >
+                  {DISCIPLINES.map((name) => (
+                    <option key={name}>{name}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field
+                label="County"
+                hint={
+                  showDevCountyUuid
+                    ? "Development fallback only — seed counties for the normal selector"
+                    : "Kenya counties from the platform registry"
+                }
+              >
+                {countyOptions.length ? (
+                  <select
+                    className="field-input"
+                    value={countyId}
+                    onChange={(e) => setCountyId(e.target.value)}
+                    required
+                    disabled={createOfficer.isPending || counties.isLoading}
+                  >
+                    <option value="">Select county</option>
+                    {countyOptions.map((row) => (
+                      <option key={row.id} value={row.id}>
+                        {row.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : showDevCountyUuid ? (
+                  <input
+                    className="field-input font-mono text-xs"
+                    value={countyId}
+                    onChange={(e) => setCountyId(e.target.value)}
+                    placeholder="County UUID (dev only)"
+                    required
+                    disabled={createOfficer.isPending}
+                  />
+                ) : (
+                  <p className="text-sm text-stone-500">Loading counties…</p>
+                )}
+              </Field>
+              <div className="md:col-span-2 flex flex-wrap items-center gap-3">
+                <Button type="submit" disabled={createOfficer.isPending || !formValid || counties.isLoading}>
+                  {createOfficer.isPending ? "Creating officer…" : "Create officer & login"}
+                </Button>
+                {counties.isLoading ? <span className="text-xs text-stone-500">Loading counties…</span> : null}
+              </div>
+            </form>
+          )}
+          {counties.isError ? (
+            <div className="mt-4">
+              <LoadError error={counties.error} onRetry={() => counties.refetch()} />
+            </div>
+          ) : null}
+        </Panel>
+        {saved ? <Notice>{saved}</Notice> : null}
+        {createOfficer.isError ? <Notice tone="error">{(createOfficer.error as Error).message}</Notice> : null}
+      </Section>
+
+      <Section eyebrow="Directory" title="Experts and console access">
+        <p className="text-sm text-stone-600">
+          Seeded experts may appear as <span className="font-medium text-stone-800">Directory only</span> until you give
+          them a staff login through the form above.
+        </p>
+        <div className="space-y-4">
+          {staff.isError ? <LoadError error={staff.error} onRetry={() => staff.refetch()} /> : null}
+          <Table
+            caption="Field officers"
+            emptyTitle="No officers on the roster"
+            emptyHint="Add a field officer above. USSD continues to use Expert records independently of staff logins."
+            headers={["Officer", "County", "Discipline", "Organisation", "Duty", "Access"]}
+            rows={(experts.data?.items || []).map((row) => {
+              const access = consoleAccess(row.id, staffByExpert);
+              return [
+                <div key={row.id}>
+                  <p className="font-medium">{row.full_name}</p>
+                  <p className="text-xs text-stone-500">{row.phone_number}</p>
+                </div>,
+                countyMap.get(row.county_id) || "—",
+                row.expert_type,
+                row.organization,
+                <Badge key="d" tone={row.is_available ? "green" : "zinc"}>
+                  {row.is_available ? "On duty" : "Off duty"}
+                </Badge>,
+                <span key="c" className="inline-flex flex-col items-start gap-0.5">
+                  <Badge tone={access.tone}>{access.label}</Badge>
+                  <span className="text-[11px] text-stone-500">{access.hint}</span>
+                </span>,
+              ];
+            })}
+          />
+          <Pager total={experts.data?.total ?? 0} limit={PAGE_SIZE} offset={offset} onOffset={setOffset} />
+        </div>
+      </Section>
+    </div>
+  );
+}

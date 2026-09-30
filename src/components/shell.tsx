@@ -1,0 +1,337 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { api, getStaffRole, logoutStaff } from "@/lib/api";
+import { isStaffRole } from "@/lib/http";
+
+const PREFETCH: Record<string, { queryKey: readonly unknown[]; path: string }> = {
+  "/admin/overview": { queryKey: ["overview"], path: "/admin/overview" },
+  "/admin/farmers": { queryKey: ["farmers", "", "", "", 0], path: "/admin/farmers?limit=20&offset=0" },
+  "/admin/requests": { queryKey: ["requests", "All", 0], path: "/admin/expert-requests?limit=20&offset=0" },
+  "/admin/quotes": { queryKey: ["quotes", 0], path: "/admin/quotes?limit=20&offset=0" },
+  "/admin/experts": { queryKey: ["experts", 0], path: "/admin/experts?limit=20&offset=0" },
+  "/officer/requests": { queryKey: ["requests", "All", 0], path: "/admin/expert-requests?limit=20&offset=0" },
+};
+
+type NavLink = { href: string; label: string; hint?: string };
+
+type NavGroup = { label: string; links: NavLink[] };
+
+const ADMIN_GROUPS: NavGroup[] = [
+  {
+    label: "Today",
+    links: [
+      { href: "/admin/overview", label: "Operations" },
+      { href: "/admin/requests", label: "Field visits" },
+      { href: "/admin/farmers", label: "Farm registry" },
+    ],
+  },
+  {
+    label: "Advice",
+    links: [
+      { href: "/admin/experts", label: "Officers" },
+      { href: "/admin/advisories", label: "Advisories" },
+      { href: "/admin/products", label: "Inputs" },
+      { href: "/admin/market-prices", label: "Market prices" },
+    ],
+  },
+  {
+    label: "Revenue",
+    links: [
+      { href: "/admin/quotes", label: "Quote desk" },
+      { href: "/admin/pricing", label: "Size bands" },
+      { href: "/admin/subscriptions", label: "Subscriptions" },
+    ],
+  },
+  {
+    label: "Channels",
+    links: [
+      { href: "/admin/sms-sessions", label: "USSD / SMS" },
+      { href: "/admin/audit", label: "Audit trail" },
+    ],
+  },
+];
+
+const OFFICER_GROUPS: NavGroup[] = [
+  {
+    label: "My field day",
+    links: [
+      { href: "/officer/overview", label: "Queue" },
+      { href: "/officer/requests", label: "Visits" },
+      { href: "/officer/availability", label: "On duty" },
+    ],
+  },
+];
+
+const PAGE_COPY: Record<string, { title: string; description: string }> = {
+  "/admin/overview": {
+    title: "Operations",
+    description: "What needs a decision today across farms, visits, and payments.",
+  },
+  "/admin/farmers": {
+    title: "Farm registry",
+    description: "Find a farmer by phone, then review land, herd, and live quote class.",
+  },
+  "/admin/experts": {
+    title: "Officers",
+    description: "Add field officers, issue console logins, and review who is on duty.",
+  },
+  "/admin/requests": {
+    title: "Field visits",
+    description: "Accept, complete, or cancel expert visits from the queue.",
+  },
+  "/admin/advisories": {
+    title: "Advisories",
+    description: "National SMS guidance that goes out to subscribed farmers.",
+  },
+  "/admin/products": {
+    title: "Inputs",
+    description: "Recommended fertiliser and other products for advice flows.",
+  },
+  "/admin/market-prices": {
+    title: "Market prices",
+    description: "KAMIS commodity prices used when a farmer asks what to sell for.",
+  },
+  "/admin/quotes": {
+    title: "Quote desk",
+    description: "Size a farm from acres and livestock, then read the SMS they would get.",
+  },
+  "/admin/pricing": {
+    title: "Size bands",
+    description: "Acre and TLU bands that set monthly fees. Large is capped at KES 400.",
+  },
+  "/admin/subscriptions": {
+    title: "Subscriptions",
+    description: "Which farms currently have paid or complimentary access.",
+  },
+  "/admin/sms-sessions": {
+    title: "USSD / SMS",
+    description: "Live and recent conversations on 3797.",
+  },
+  "/admin/audit": {
+    title: "Audit trail",
+    description: "Staff actions on farmers, quotes, visits, and content.",
+  },
+  "/officer/overview": {
+    title: "Today’s queue",
+    description: "Visits waiting on you. Accept what you can do today.",
+  },
+  "/officer/requests": {
+    title: "My visits",
+    description: "Open a visit, then accept, complete, or cancel it.",
+  },
+  "/officer/availability": {
+    title: "On duty",
+    description: "Farmers only see you in the directory while you are available.",
+  },
+};
+
+function pageMeta(pathname: string) {
+  if (PAGE_COPY[pathname]) return PAGE_COPY[pathname];
+  if (pathname.startsWith("/admin/farmers/")) {
+    return { title: "Farm file", description: "Land, herd, identity, and visit history for this farmer." };
+  }
+  return { title: "Agritech AI", description: "Agricultural operations" };
+}
+
+function Mark() {
+  return (
+    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-forest-400 to-forest-700 shadow-inner">
+      <svg viewBox="0 0 24 24" className="h-5 w-5 text-cream-50" fill="none" aria-hidden>
+        <path
+          d="M12 21c6-3.5 8-8 8-12.5C14.5 9 12 5 12 3 12 5 9.5 9 4 8.5 4 13 6 17.5 12 21Z"
+          fill="currentColor"
+        />
+      </svg>
+    </span>
+  );
+}
+
+export function Shell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [role, setRole] = useState<string | null>(null);
+  const [online, setOnline] = useState(true);
+  const session = useQuery({
+    queryKey: ["staff-me"],
+    queryFn: () => api<{ role: string }>("/staff/me"),
+    staleTime: 5 * 60_000,
+  });
+  useEffect(() => {
+    setRole(getStaffRole());
+  }, []);
+  useEffect(() => {
+    const next = session.data?.role;
+    if (!isStaffRole(next)) return;
+    setRole(next);
+    if (next === "officer" && pathname.startsWith("/admin")) {
+      router.replace("/officer/overview");
+    }
+  }, [session.data, pathname, router]);
+  useEffect(() => {
+    const mark = () => setOnline(navigator.onLine);
+    mark();
+    window.addEventListener("online", mark);
+    window.addEventListener("offline", mark);
+    return () => {
+      window.removeEventListener("online", mark);
+      window.removeEventListener("offline", mark);
+    };
+  }, []);
+  const onOfficerRoute = pathname.startsWith("/officer");
+  const isOfficer = role === "officer" || (role === null && onOfficerRoute);
+  const groups = isOfficer ? OFFICER_GROUPS : ADMIN_GROUPS;
+  const meta = pageMeta(pathname);
+  const roleLabel = isOfficer ? "Field officer" : role === "platform_admin" || role === null ? "Platform ops" : "Staff";
+  useEffect(() => {
+    document.title = `${meta.title} · Agritech AI`;
+  }, [meta.title]);
+  const farmerFile = pathname.startsWith("/admin/farmers/") && pathname !== "/admin/farmers";
+
+  function isActive(href: string) {
+    if (href === "/admin/farmers") {
+      return pathname === href || pathname.startsWith("/admin/farmers/");
+    }
+    return pathname === href;
+  }
+
+  function prefetch(href: string) {
+    const spec = PREFETCH[href];
+    if (!spec) return;
+    void queryClient.prefetchQuery({
+      queryKey: spec.queryKey,
+      queryFn: () => api(spec.path),
+    });
+  }
+
+  async function signOut() {
+    await logoutStaff();
+    queryClient.clear();
+    router.replace("/login");
+  }
+
+  return (
+    <div className="min-h-screen text-stone-900">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:text-forest-900"
+      >
+        Skip to content
+      </a>
+      <div className="flex min-h-screen">
+        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-forest-950 px-4 py-5 text-cream-50 lg:flex">
+          <div className="flex items-center gap-3 px-1">
+            <Mark />
+            <div>
+              <p className="font-serif text-xl leading-none text-cream-50">Agritech AI</p>
+              <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-forest-200">{roleLabel}</p>
+            </div>
+          </div>
+          <nav aria-label="Sections" className="mt-8 flex-1 space-y-6 overflow-y-auto pr-1">
+            {groups.map((group) => (
+              <div key={group.label}>
+                <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-forest-300">
+                  {group.label}
+                </p>
+                <div className="space-y-0.5">
+                  {group.links.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onMouseEnter={() => prefetch(link.href)}
+                      onFocus={() => prefetch(link.href)}
+                      aria-current={isActive(link.href) ? "page" : undefined}
+                      className={`block rounded-xl px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cream-100 ${
+                        isActive(link.href)
+                          ? "bg-white/10 font-medium text-white shadow-sm"
+                          : "text-forest-100 hover:bg-white/5 hover:text-white"
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </nav>
+          <button
+            type="button"
+            className="mt-4 rounded-xl px-3 py-2 text-left text-sm text-forest-200 transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cream-100"
+            onClick={signOut}
+          >
+            Sign out
+          </button>
+        </aside>
+
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="sticky top-0 z-20 border-b border-stone-200/80 bg-cream-50/90 px-4 py-4 backdrop-blur-md md:px-8">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="mb-1 flex items-center gap-2 lg:hidden">
+                  <Mark />
+                  <p className="font-serif text-lg text-forest-900">Agritech AI</p>
+                </div>
+                {farmerFile ? (
+                  <Link href="/admin/farmers" className="mb-1 inline-block text-xs font-medium text-forest-700 hover:underline">
+                    ← Farm registry
+                  </Link>
+                ) : null}
+                <h1 className="truncate text-xl font-semibold tracking-tight text-stone-900">{meta.title}</h1>
+                <p className="mt-0.5 max-w-2xl text-sm leading-relaxed text-stone-500">{meta.description}</p>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <span className="hidden rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-forest-800 ring-1 ring-forest-100 sm:inline">
+                  {isOfficer ? "Field" : "Kenya ops"}
+                </span>
+                <button
+                  type="button"
+                  className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-forest-500/20 lg:hidden"
+                  onClick={signOut}
+                >
+                  Sign out
+                </button>
+              </div>
+            </div>
+            <nav aria-label="Sections" className="nav-scroll mt-3 flex gap-4 overflow-x-auto pb-1 lg:hidden">
+              {groups.map((group) => (
+                <div key={group.label} className="flex shrink-0 items-center gap-1">
+                  <span className="pr-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-400">
+                    {group.label}
+                  </span>
+                  {group.links.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onMouseEnter={() => prefetch(link.href)}
+                      onFocus={() => prefetch(link.href)}
+                      aria-current={isActive(link.href) ? "page" : undefined}
+                      className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest-600 ${
+                        isActive(link.href)
+                          ? "bg-forest-800 text-white"
+                          : "bg-white text-stone-600 ring-1 ring-stone-200"
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              ))}
+            </nav>
+          </header>
+          {!online ? (
+            <p role="status" className="bg-soil-600 px-4 py-2 text-sm text-cream-50 md:px-8">
+              You are offline. Records will not refresh until the connection returns.
+            </p>
+          ) : null}
+          <main id="main" className="mx-auto w-full max-w-6xl flex-1 space-y-5 p-4 md:p-8">
+            {children}
+          </main>
+        </div>
+      </div>
+    </div>
+  );
+}
