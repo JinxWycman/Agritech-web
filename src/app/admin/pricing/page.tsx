@@ -20,7 +20,7 @@ export default function PricingPage() {
   if (query.isError) return <LoadError error={query.error} onRetry={() => query.refetch()} />;
   const rules = query.data?.items || [];
   if (!rules.length) {
-    return <State kind="empty" title="No pricing bands" text="Active acre and TLU bands are seeded by migration. Check that the database is upgraded." />;
+    return <State kind="empty" title="No pricing bands" />;
   }
   return (
     <div className="grid gap-4 md:grid-cols-2">

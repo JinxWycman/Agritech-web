@@ -3,7 +3,7 @@ import { Shell } from "@/components/shell";
 
 export const metadata: Metadata = {
   title: "Field officer",
-  description: "Agritech AI field desk for agriculture and veterinary officers.",
+  description: "Agritech field desk.",
 };
 
 export default function OfficerLayout({ children }: { children: React.ReactNode }) {

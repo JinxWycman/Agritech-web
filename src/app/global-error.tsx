@@ -12,7 +12,7 @@ export default function GlobalError({
       <body style={{ margin: 0, background: "#f4efe4", color: "#1c1917", fontFamily: "Georgia, serif" }}>
         <main style={{ maxWidth: 32 * 16, margin: "0 auto", padding: "4rem 1.5rem" }}>
           <p style={{ letterSpacing: "0.16em", textTransform: "uppercase", fontSize: 11, color: "#8C6A45" }}>
-            Agritech AI
+            Agritech
           </p>
           <h1 style={{ fontSize: 36, fontWeight: 400 }}>The console hit an unexpected error</h1>
           <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, lineHeight: 1.6 }}>

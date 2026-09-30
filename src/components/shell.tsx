@@ -49,7 +49,7 @@ const ADMIN_GROUPS: NavGroup[] = [
   {
     label: "Channels",
     links: [
-      { href: "/admin/sms-sessions", label: "USSD / SMS" },
+      { href: "/admin/sms-sessions", label: "Farmer sessions" },
       { href: "/admin/audit", label: "Audit trail" },
     ],
   },
@@ -66,75 +66,30 @@ const OFFICER_GROUPS: NavGroup[] = [
   },
 ];
 
-const PAGE_COPY: Record<string, { title: string; description: string }> = {
-  "/admin/overview": {
-    title: "Operations",
-    description: "What needs a decision today across farms, visits, and payments.",
-  },
-  "/admin/farmers": {
-    title: "Farm registry",
-    description: "Find a farmer by phone, then review land, herd, and live quote class.",
-  },
-  "/admin/experts": {
-    title: "Officers",
-    description: "Add field officers, issue console logins, and review who is on duty.",
-  },
-  "/admin/requests": {
-    title: "Field visits",
-    description: "Accept, complete, or cancel expert visits from the queue.",
-  },
-  "/admin/advisories": {
-    title: "Advisories",
-    description: "National SMS guidance that goes out to subscribed farmers.",
-  },
-  "/admin/products": {
-    title: "Inputs",
-    description: "Recommended fertiliser and other products for advice flows.",
-  },
-  "/admin/market-prices": {
-    title: "Market prices",
-    description: "KAMIS commodity prices used when a farmer asks what to sell for.",
-  },
-  "/admin/quotes": {
-    title: "Quote desk",
-    description: "Size a farm from acres and livestock, then read the SMS they would get.",
-  },
-  "/admin/pricing": {
-    title: "Size bands",
-    description: "Acre and TLU bands. Paid farms are KSh 20, 40, or 70 a month.",
-  },
-  "/admin/subscriptions": {
-    title: "Subscriptions",
-    description: "Which farms currently have paid or complimentary access.",
-  },
-  "/admin/sms-sessions": {
-    title: "USSD / SMS",
-    description: "Live and recent conversations on 3797 and *384#.",
-  },
-  "/admin/audit": {
-    title: "Audit trail",
-    description: "Staff actions on farmers, quotes, visits, and content.",
-  },
-  "/officer/overview": {
-    title: "Today’s queue",
-    description: "Visits waiting on you. Accept what you can do today.",
-  },
-  "/officer/requests": {
-    title: "My visits",
-    description: "Open a visit, then accept, complete, or cancel it.",
-  },
-  "/officer/availability": {
-    title: "On duty",
-    description: "Farmers only see you in the directory while you are available.",
-  },
+const PAGE_COPY: Record<string, { title: string; description?: string }> = {
+  "/admin/overview": { title: "Operations" },
+  "/admin/farmers": { title: "Farm registry" },
+  "/admin/experts": { title: "Officers" },
+  "/admin/requests": { title: "Field visits" },
+  "/admin/advisories": { title: "Advisories" },
+  "/admin/products": { title: "Inputs" },
+  "/admin/market-prices": { title: "Market prices" },
+  "/admin/quotes": { title: "Quote desk" },
+  "/admin/pricing": { title: "Size bands" },
+  "/admin/subscriptions": { title: "Subscriptions" },
+  "/admin/sms-sessions": { title: "Farmer sessions" },
+  "/admin/audit": { title: "Audit trail" },
+  "/officer/overview": { title: "Queue" },
+  "/officer/requests": { title: "Visits" },
+  "/officer/availability": { title: "On duty" },
 };
 
 function pageMeta(pathname: string) {
   if (PAGE_COPY[pathname]) return PAGE_COPY[pathname];
   if (pathname.startsWith("/admin/farmers/")) {
-    return { title: "Farm file", description: "Land, herd, identity, and visit history for this farmer." };
+    return { title: "Farm file" };
   }
-  return { title: "Agritech AI", description: "Agricultural operations" };
+  return { title: "Agritech" };
 }
 
 function KenyaClock() {
@@ -210,7 +165,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const meta = pageMeta(pathname);
   const roleLabel = isOfficer ? "Field officer" : role === "platform_admin" || role === null ? "HQ Kenya" : "Staff";
   useEffect(() => {
-    document.title = `${meta.title} · Agritech AI`;
+    document.title = `${meta.title} · Agritech`;
   }, [meta.title]);
   const farmerFile = pathname.startsWith("/admin/farmers/") && pathname !== "/admin/farmers";
 
@@ -249,7 +204,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3 px-1">
             <Mark />
             <div>
-              <p className="font-serif text-xl leading-none text-cream-50">Agritech AI</p>
+              <p className="font-serif text-xl leading-none text-cream-50">Agritech</p>
               <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-forest-200">{roleLabel}</p>
             </div>
           </div>
@@ -281,7 +236,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
             ))}
           </nav>
           <div className="mt-3 border-t border-white/10 pt-3">
-            <p className="px-2 text-[10px] leading-relaxed text-forest-300">USSD *384# · SMS 3797 · KSh</p>
             <button
               type="button"
               className="mt-2 w-full rounded-md px-3 py-2 text-left text-sm text-forest-200 transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cream-100"
@@ -298,7 +252,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <div className="min-w-0">
                 <div className="mb-1 flex items-center gap-2 lg:hidden">
                   <Mark />
-                  <p className="font-serif text-lg text-forest-900">Agritech AI</p>
+                  <p className="font-serif text-lg text-forest-900">Agritech</p>
                 </div>
                 {farmerFile ? (
                   <Link href="/admin/farmers" className="mb-1 inline-block text-xs font-medium text-forest-700 hover:underline">
@@ -306,7 +260,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   </Link>
                 ) : null}
                 <h1 className="truncate text-xl font-semibold tracking-tight text-stone-900">{meta.title}</h1>
-                <p className="mt-0.5 max-w-2xl text-sm leading-relaxed text-stone-500">{meta.description}</p>
+                {meta.description ? (
+                  <p className="mt-0.5 max-w-2xl text-sm leading-relaxed text-stone-500">{meta.description}</p>
+                ) : null}
               </div>
               <div className="flex shrink-0 flex-col items-end gap-2">
                 <span className="hidden text-[11px] text-stone-500 sm:inline">

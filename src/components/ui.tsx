@@ -211,12 +211,12 @@ export function State({
   action?: React.ReactNode;
 }) {
   const copy = {
-    loading: { title: "Opening the register…", body: text || "Pulling farms, visits, and M-Pesa quotes." },
+    loading: { title: "Loading…", body: text || "" },
     empty: {
-      title: title || "No records in this view",
-      body: text || "Farmers, visits, and quotes appear here once USSD, SMS, or staff activity starts.",
+      title: title || "Nothing here yet",
+      body: text || "",
     },
-    error: { title: title || "Could not load this view", body: text || "Check the API and try again." },
+    error: { title: title || "Could not load this view", body: text || "Try again." },
     forbidden: { title: "Not allowed", body: text || "Your role cannot do this." },
   };
   const styles = {
@@ -231,7 +231,9 @@ export function State({
         <span className="mx-auto mb-3 block h-1.5 w-24 animate-pulse rounded-full bg-forest-300" />
       ) : null}
       <p className="font-medium">{copy[kind].title}</p>
-      <p className="mx-auto mt-1 max-w-md text-sm leading-relaxed opacity-80">{copy[kind].body}</p>
+      {copy[kind].body ? (
+        <p className="mx-auto mt-1 max-w-md text-sm leading-relaxed opacity-80">{copy[kind].body}</p>
+      ) : null}
       {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
     </div>
   );

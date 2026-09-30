@@ -1,6 +1,6 @@
 /**
  * Allow-list for the Next.js /backend proxy.
- * USSD, SMS, and M-Pesa must stay on the API host — this site must not forward them.
+ * Farmer phone webhooks and M-Pesa must stay on the API host — this site must not forward them.
  */
 const STAFF_PATHS = new Set(["/staff/login", "/staff/refresh", "/staff/me", "/staff/logout"]);
 

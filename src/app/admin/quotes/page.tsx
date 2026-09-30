@@ -69,28 +69,9 @@ export default function QuotesPage() {
 
   return (
     <div className="space-y-8">
-      <ol className="flex flex-wrap gap-2 text-xs font-medium">
-        {["Size the farm", "Read the quote", "Check recent STK quotes"].map((label, index) => {
-          const active = preview.data ? index <= 1 : index === 0;
-          return (
-            <li
-              key={label}
-              className={`rounded-full px-3 py-1 ${
-                active ? "bg-forest-800 text-white" : "bg-white text-stone-500 ring-1 ring-stone-200"
-              }`}
-            >
-              {index + 1}. {label}
-            </li>
-          );
-        })}
-      </ol>
-
       <Panel className="p-5 md:p-6">
-        <p className="mb-4 text-sm text-stone-600">
-          Class is the higher of crop acres and livestock TLU. Cattle count as 1 TLU, goats and sheep 0.15, poultry 0.01. Paid bands are KSh 20, 40, and 70.
-        </p>
         <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 xl:items-end">
-          <Field label="Acres" hint="Crop land in production">
+          <Field label="Acres">
             <input className="field-input" value={acres} onChange={(e) => setAcres(e.target.value)} inputMode="decimal" />
           </Field>
           <Field label="Cattle">
@@ -106,7 +87,7 @@ export default function QuotesPage() {
             <input className="field-input" value={poultry} onChange={(e) => setPoultry(e.target.value)} inputMode="numeric" />
           </Field>
           <Button type="submit" disabled={preview.isPending}>
-            {preview.isPending ? "Sizing…" : "Preview farmer SMS"}
+            {preview.isPending ? "Sizing…" : "Preview quote"}
           </Button>
         </form>
         {formError ? (
@@ -117,11 +98,7 @@ export default function QuotesPage() {
       </Panel>
 
       {!preview.data && !preview.isError ? (
-        <State
-          kind="empty"
-          title="No quote preview yet"
-          text="Enter acres and herd above. The next screen is the exact SMS a farmer would receive after USSD subscribe."
-        />
+        <State kind="empty" title="No quote preview yet" text="Enter acres and livestock above." />
       ) : null}
 
       {preview.data ? (
@@ -138,23 +115,21 @@ export default function QuotesPage() {
             accent="gold"
           />
           <Panel className="bg-forest-950 p-5 text-cream-50">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-forest-200">SMS the farmer would see</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-forest-200">SMS</p>
             <p className="mt-3 text-sm leading-relaxed text-cream-100">{preview.data.sms_text}</p>
-            <p className="mt-4 text-xs text-forest-200">On the phone they reply 1 to pay with M-Pesa, or 2 to cancel.</p>
           </Panel>
         </div>
       ) : null}
       {preview.isError ? <LoadError error={preview.error} onRetry={() => preview.mutate()} /> : null}
 
-      <Section eyebrow="Recent quotes" title="What farmers were asked to pay">
+      <Section title="Recent quotes">
         {quotes.isLoading && !quotes.data ? <State kind="loading" /> : null}
         {quotes.isError && !quotes.data ? <LoadError error={quotes.error} onRetry={() => quotes.refetch()} /> : null}
         {quotes.data ? (
           <div className="space-y-4">
             <Table
               caption="Recent quotes"
-              emptyTitle="No quotes issued yet"
-              emptyHint="Quotes are created when a farmer chooses Subscribe on USSD or SMS. Preview above does not write a quote."
+              emptyTitle="No quotes yet"
               headers={["When", "Class", "Fee", "Acres", "Status"]}
               rows={quotes.data.items.map((row) => [
                 when(row.created_at),

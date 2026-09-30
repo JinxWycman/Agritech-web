@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { api, type Page } from "@/lib/api";
-import { Badge, Button, Card, LoadError, Panel, Section, State } from "@/components/ui";
+import { Badge, Card, LoadError, Panel, Section, State } from "@/components/ui";
 import type { StaffRequest } from "@/components/request-board";
 
 type Queue = {
@@ -36,8 +36,8 @@ export default function OfficerOverviewPage() {
   return (
     <div className="space-y-8">
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card title="Waiting for you" value={pending?.total ?? 0} hint="Accept if you can travel" accent="gold" href="/officer/requests" />
-        <Card title="On your calendar" value={accepted?.total ?? 0} hint="Mark complete after the visit" href="/officer/requests" />
+        <Card title="Waiting for you" value={pending?.total ?? 0} accent="gold" href="/officer/requests" />
+        <Card title="On your calendar" value={accepted?.total ?? 0} href="/officer/requests" />
         <Card title="Closed" value={completed?.total ?? 0} accent="stone" />
       </div>
 
@@ -70,16 +70,7 @@ export default function OfficerOverviewPage() {
             ))}
           </Panel>
         ) : (
-          <State
-            kind="empty"
-            title="No open visits"
-            text="When a farmer requests an expert, it appears here. Stay on duty so they can find you."
-            action={
-              <Link href="/officer/availability">
-                <Button variant="ghost">Go on duty</Button>
-              </Link>
-            }
-          />
+          <State kind="empty" title="No open visits" />
         )}
       </Section>
     </div>

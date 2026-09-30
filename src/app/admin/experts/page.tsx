@@ -36,21 +36,16 @@ type FieldOfficerResult = {
 
 const PAGE_SIZE = 20;
 const DISCIPLINES = ["Agriculture", "Veterinary"] as const;
-const DEV_COUNTY_FALLBACK = process.env.NODE_ENV === "development";
 
 function consoleAccess(expertId: string, staffByExpert: Map<string, StaffUser>) {
   const login = staffByExpert.get(expertId);
   if (!login) {
-    return {
-      label: "Directory only",
-      hint: "USSD listing without a staff login",
-      tone: "zinc" as const,
-    };
+    return { label: "Directory only", tone: "zinc" as const };
   }
   if (!login.is_active) {
-    return { label: "Console disabled", hint: "Staff login is inactive", tone: "amber" as const };
+    return { label: "Inactive", tone: "amber" as const };
   }
-  return { label: "Console access", hint: "Can sign in at /login", tone: "green" as const };
+  return { label: "Can sign in", tone: "green" as const };
 }
 
 export default function ExpertsPage() {
@@ -103,9 +98,7 @@ export default function ExpertsPage() {
         }),
       }),
     onSuccess: (data) => {
-      setSaved(
-        `${data.expert.full_name} has a USSD directory profile and console access. They sign in at /login with the phone and password you set, then go on duty from the officer desk.`,
-      );
+      setSaved(`${data.expert.full_name} can sign in.`);
       setFullName("");
       setPhone("");
       setPassword("");
@@ -123,9 +116,7 @@ export default function ExpertsPage() {
   }
 
   const countyOptions = counties.data || [];
-  const showDevCountyUuid =
-    DEV_COUNTY_FALLBACK && !counties.isLoading && !counties.isError && countyOptions.length === 0;
-  const countyReady = countyOptions.length > 0 || showDevCountyUuid;
+  const countyReady = countyOptions.length > 0;
   const formValid =
     fullName.trim().length >= 3 &&
     phone.trim().length >= 10 &&
@@ -140,17 +131,11 @@ export default function ExpertsPage() {
     <div className="space-y-8">
       <Section eyebrow="Roster" title="Add a field officer">
         <Panel className="p-5 md:p-6">
-          <p className="mb-4 text-sm leading-relaxed text-stone-600">
-            One action creates two linked records: an <strong className="font-medium text-stone-800">Expert</strong> for
-            USSD and farmer requests, and a <strong className="font-medium text-stone-800">StaffUser</strong> officer
-            login tied through <span className="font-mono text-xs">expert_id</span>. Platform admin accounts are not
-            created here.
-          </p>
           {!countyReady && !counties.isLoading ? (
             <State
               kind="empty"
               title="Counties are not loaded"
-              text="Run county seeds or migrations so the admin county list is available before adding officers."
+              text="Connect to the API, then try again."
             />
           ) : (
             <form onSubmit={onSubmit} className="grid gap-4 md:grid-cols-2">
@@ -165,7 +150,7 @@ export default function ExpertsPage() {
                   disabled={createOfficer.isPending}
                 />
               </Field>
-              <Field label="Phone" hint="Same number for USSD, visits, and /login">
+              <Field label="Phone">
                 <input
                   className="field-input"
                   value={phone}
@@ -215,14 +200,7 @@ export default function ExpertsPage() {
                   ))}
                 </select>
               </Field>
-              <Field
-                label="County"
-                hint={
-                  showDevCountyUuid
-                    ? "Development fallback only — seed counties for the normal selector"
-                    : "Kenya counties from the platform registry"
-                }
-              >
+              <Field label="County">
                 {countyOptions.length ? (
                   <select
                     className="field-input"
@@ -238,15 +216,6 @@ export default function ExpertsPage() {
                       </option>
                     ))}
                   </select>
-                ) : showDevCountyUuid ? (
-                  <input
-                    className="field-input font-mono text-xs"
-                    value={countyId}
-                    onChange={(e) => setCountyId(e.target.value)}
-                    placeholder="County UUID (dev only)"
-                    required
-                    disabled={createOfficer.isPending}
-                  />
                 ) : (
                   <p className="text-sm text-stone-500">Loading counties…</p>
                 )}
@@ -269,17 +238,12 @@ export default function ExpertsPage() {
         {createOfficer.isError ? <Notice tone="error">{(createOfficer.error as Error).message}</Notice> : null}
       </Section>
 
-      <Section eyebrow="Directory" title="Experts and console access">
-        <p className="text-sm text-stone-600">
-          Seeded experts may appear as <span className="font-medium text-stone-800">Directory only</span> until you give
-          them a staff login through the form above.
-        </p>
+      <Section title="Officers">
         <div className="space-y-4">
           {staff.isError ? <LoadError error={staff.error} onRetry={() => staff.refetch()} /> : null}
           <Table
             caption="Field officers"
-            emptyTitle="No officers on the roster"
-            emptyHint="Add a field officer above. USSD continues to use Expert records independently of staff logins."
+            emptyTitle="No officers"
             headers={["Officer", "County", "Discipline", "Organisation", "Duty", "Access"]}
             rows={(experts.data?.items || []).map((row) => {
               const access = consoleAccess(row.id, staffByExpert);
@@ -294,10 +258,9 @@ export default function ExpertsPage() {
                 <Badge key="d" tone={row.is_available ? "green" : "zinc"}>
                   {row.is_available ? "On duty" : "Off duty"}
                 </Badge>,
-                <span key="c" className="inline-flex flex-col items-start gap-0.5">
-                  <Badge tone={access.tone}>{access.label}</Badge>
-                  <span className="text-[11px] text-stone-500">{access.hint}</span>
-                </span>,
+                <Badge key="c" tone={access.tone}>
+                  {access.label}
+                </Badge>,
               ];
             })}
           />

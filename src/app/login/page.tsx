@@ -32,23 +32,11 @@ export default function LoginPage() {
       />
       <div aria-hidden className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-forest-950 to-transparent" />
 
-      <div className="relative z-10 flex min-h-dvh flex-col justify-center px-5 py-10 sm:px-10 lg:w-[min(36rem,44vw)] lg:justify-between lg:px-12 lg:py-12 xl:px-16">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-soil-400">Kenya · staff desk</p>
-          <h1 className="mt-3 max-w-md font-serif text-4xl leading-tight sm:text-5xl">Karibu, Agritech AI</h1>
-          <p className="mt-4 max-w-sm text-sm leading-relaxed text-forest-100">
-            HQ and field officers. Farmers stay on the phone — USSD <span className="text-cream-50">*384#</span> and SMS{" "}
-            <span className="text-cream-50">3797</span>. Monthly farm size is KSh 20 to 70.
-          </p>
-        </div>
-
+      <div className="relative z-10 flex min-h-dvh flex-col justify-center px-5 py-10 sm:px-10 lg:w-[min(36rem,44vw)] lg:px-12 xl:px-16">
+        <h1 className="max-w-md font-serif text-4xl leading-tight sm:text-5xl">Karibu, Agritech</h1>
         <Suspense fallback={<FormFallback />}>
           <LoginForm />
         </Suspense>
-
-        <p className="hidden text-xs leading-relaxed text-forest-200 lg:block">
-          East Africa Time. Password is checked by the API, not this page.
-        </p>
       </div>
     </main>
   );

@@ -144,7 +144,7 @@ export function RequestBoard({ perspective = "admin" }: { perspective?: "admin" 
                           text={
                             officer
                               ? "When a farmer requests an expert, it lands here for you to accept."
-                              : "Farmers raise visits from USSD. They will show here for assignment."
+                              : "When a farmer requests an expert, the visit lands here."
                           }
                         />
                       </td>

@@ -2,7 +2,7 @@
  * Staff console helpers that do not talk to the network.
  *
  * Roles: platform_admin (HQ) and officer (field / vet visits).
- * Farmers never sign in here — they use USSD *384# / SMS 3797.
+ * Farmers never sign in here — this console is for staff only.
  */
 export const STAFF_HOME = {
   platform_admin: "/admin/overview",
@@ -66,5 +66,4 @@ export class ApiError extends Error {
   }
 }
 
-export const OFFLINE_MESSAGE =
-  "Cannot reach the Agritech API. Check your connection and that the server is running.";
+export const OFFLINE_MESSAGE = "Cannot reach the server.";

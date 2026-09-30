@@ -21,7 +21,6 @@ export default function AuditPage() {
       <Table
         caption="Audit trail"
         emptyTitle="No staff actions recorded"
-        emptyHint="Publishing advisories, changing farms, and visit decisions write a row here."
         headers={["When", "Action", "Record", "Actor"]}
         rows={(query.data?.items || []).map((row) => [
           when(row.created_at),

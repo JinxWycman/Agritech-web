@@ -90,7 +90,6 @@ export default function ProductsPage() {
         <Table
           caption="Inputs"
           emptyTitle="No inputs catalogued"
-          emptyHint="Add a product above. Officers use this list in advisory conversations."
           headers={["Name", "Category", "Target", "Active"]}
           rows={query.data.map((row) => [
             row.product_name,

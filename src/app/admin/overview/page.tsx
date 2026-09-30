@@ -137,9 +137,9 @@ export default function OverviewPage() {
       <Section eyebrow="Channels">
         <div className="grid gap-4 sm:grid-cols-3">
           <Card
-            title="Open SMS / USSD"
+            title="Open farmer sessions"
             value={data.sms_sessions_open}
-            hint="Live USSD and SMS conversations"
+            hint="Recent phone conversations"
             accent="stone"
             href="/admin/sms-sessions"
           />

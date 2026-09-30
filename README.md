@@ -1,6 +1,6 @@
-# Agritech AI
+# Agritech
 
-Staff console for Agritech (platform admins and field officers). Farmers still use USSD/SMS on the API — this repo is the web dashboard only.
+Staff console for Agritech (platform admins and field officers). This repo is the web dashboard only.
 
 ## Connect to the deployed API
 
@@ -12,7 +12,7 @@ NEXT_PUBLIC_API_URL=https://YOUR-DEPLOYED-API-HOST
 
 No trailing slash. The app calls `/backend/...` on this Next server; that route forwards only `/staff/*` session paths and `/admin/*` to the API.
 
-The live API must already expose `/staff/login` and `/admin/overview`. Farmer routes (`/ussd`, `/sms`, `/mpesa/callback`) stay on the API and are not used by this site.
+The live API must already expose `/staff/login` and `/admin/overview`.
 
 ## Local
 

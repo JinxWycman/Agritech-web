@@ -69,7 +69,7 @@ export default function AdvisoriesPage() {
               </select>
             </Field>
           </div>
-          <Field label="Message" hint="At least 10 characters. This is the text farmers can receive.">
+          <Field label="Message">
             <textarea
               className="field-input min-h-28"
               placeholder="What farmers should know"
@@ -94,7 +94,6 @@ export default function AdvisoriesPage() {
         <Table
           caption="Advisories"
           emptyTitle="No advisories published"
-          emptyHint="Publish a national message above. It is what subscribed farmers can receive on SMS."
           headers={["Title", "Category", "Scope", "Active"]}
           rows={query.data.map((row) => [
             row.title,

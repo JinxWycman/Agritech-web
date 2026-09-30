@@ -3,7 +3,7 @@ import { allowedBackendPath, rewriteSetCookie, stripRefreshFromStaffPayload } fr
 
 /**
  * Same-origin proxy: browser → this Next.js route → FastAPI.
- * Stops CORS lag and keeps USSD/SMS off this website.
+ * Stops CORS lag and keeps farmer phone webhooks off this website.
  */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -62,7 +62,7 @@ async function proxy(request: NextRequest, context: { params: Promise<{ path: st
     upstream = await fetch(target, init);
   } catch {
     return NextResponse.json(
-      { detail: "Cannot reach the Agritech API. Check that the server is running." },
+      { detail: "Cannot reach the server." },
       { status: 502 },
     );
   }

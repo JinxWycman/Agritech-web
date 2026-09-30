@@ -11,5 +11,5 @@ export default function Home() {
     const destination = staffHome(getStaffRole());
     router.replace(destination ?? "/login");
   }, [router]);
-  return <p className="p-8 text-sm text-stone-600">Opening the Kenya desk…</p>;
+  return <p className="p-8 text-sm text-stone-600">Opening…</p>;
 }

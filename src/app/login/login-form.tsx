@@ -10,7 +10,7 @@ function loginMessage(error: unknown): string {
   if (error instanceof ApiError) {
     if (error.status === 0) return "Line is down. Check your internet, then try again.";
     if (error.status === 429) return "Too many tries. Wait a minute.";
-    if (error.status === 401 || error.status === 403) return "That number and password are not on the staff book.";
+    if (error.status === 401 || error.status === 403) return "Wrong number or password.";
   }
   if (error instanceof Error && error.message.trim()) return error.message;
   return "Could not sign in. Try again.";
@@ -33,7 +33,7 @@ export function LoginForm() {
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     setError("");
-    const nextPhoneError = e164 ? "" : "Enter the Safaricom / Airtel number on your staff record.";
+    const nextPhoneError = e164 ? "" : "Enter a Kenyan mobile number.";
     const nextPasswordError =
       password.length < 8 ? "Password must be at least 8 characters." : password.length > 128 ? "Password is too long." : "";
     setPhoneError(nextPhoneError);
@@ -59,15 +59,7 @@ export function LoginForm() {
 
   return (
     <form onSubmit={onSubmit} className="panel my-8 w-full max-w-md p-7 text-stone-900 sm:p-8" noValidate>
-      <div className="mb-5 flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold text-stone-900">Sign in</h2>
-          <p className="mt-1 text-sm text-stone-600">Phone as on the staff book. Not the farmer USSD.</p>
-        </div>
-        <span className="shrink-0 rounded border border-forest-800/30 bg-forest-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-forest-900">
-          Staff only
-        </span>
-      </div>
+      <h2 className="mb-5 text-lg font-semibold text-stone-900">Sign in</h2>
 
       <label className="mb-4 block text-sm font-medium text-stone-700" htmlFor="staff-phone">
         Mobile
@@ -94,7 +86,7 @@ export function LoginForm() {
             maxLength={11}
             disabled={busy}
             aria-invalid={phoneError ? true : undefined}
-            aria-describedby={phoneError ? "staff-phone-error" : "staff-phone-hint"}
+            aria-describedby={phoneError ? "staff-phone-error" : undefined}
             required
           />
         </span>
@@ -104,9 +96,7 @@ export function LoginForm() {
           {phoneError}
         </p>
       ) : (
-        <p id="staff-phone-hint" className="-mt-3 mb-4 text-xs text-stone-500">
-          {e164 ? `We will send ${e164}` : "0712… is fine. We add +254."}
-        </p>
+        <div className="mb-4" />
       )}
 
       <label className="mb-2 block text-sm font-medium text-stone-700" htmlFor="staff-password">
@@ -164,11 +154,8 @@ export function LoginForm() {
         aria-busy={busy}
         className="w-full rounded-lg bg-forest-800 py-3 text-sm font-medium text-cream-50 shadow-sm transition hover:bg-forest-900 disabled:opacity-50"
       >
-        {busy ? "Checking the staff book…" : "Sign in to the desk"}
+        {busy ? "Signing in…" : "Sign in"}
       </button>
-      <p className="mt-4 text-xs leading-relaxed text-stone-500">
-        Forgot the password? Ask a platform admin. There is no SMS reset on this desk.
-      </p>
     </form>
   );
 }

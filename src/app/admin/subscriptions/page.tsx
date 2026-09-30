@@ -24,7 +24,6 @@ export default function SubscriptionsPage() {
       <Table
         caption="Subscriptions"
         emptyTitle="No subscriptions yet"
-        emptyHint="A farm appears here after a quote is paid, or when Micro (complimentary) access is activated."
         headers={["Farmer", "Class", "Monthly", "Access", "Ends"]}
         rows={(query.data?.items || []).map((row) => [
           String(row.farmer_name || row.farmer_id),

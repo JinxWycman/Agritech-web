@@ -16,10 +16,10 @@ const instrument = Instrument_Serif({
 
 export const metadata: Metadata = {
   title: {
-    default: "Agritech AI",
-    template: "%s · Agritech AI",
+    default: "Agritech",
+    template: "%s · Agritech",
   },
-  description: "Kenya staff desk for farm quotes, field visits, and 3797 / *384#.",
+  description: "Agritech staff desk.",
 };
 
 export default function RootLayout({

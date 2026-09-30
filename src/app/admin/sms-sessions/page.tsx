@@ -20,9 +20,8 @@ export default function SmsSessionsPage() {
   return (
     <div className="space-y-4">
       <Table
-        caption="USSD and SMS sessions"
-        emptyTitle="No USSD or SMS sessions"
-        emptyHint="Sessions appear when a farmer dials the service code or texts the short code."
+        caption="Farmer sessions"
+        emptyTitle="No farmer sessions yet"
         headers={["Farmer", "Flow", "Status", "Started"]}
         rows={(query.data?.items || []).map((row) => [
           String(row.farmer_name || row.farmer_id),

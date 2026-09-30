@@ -80,7 +80,6 @@ export default function FarmersPage() {
           <Table
             caption="Farm registry"
             emptyTitle="No farms in this filter"
-            emptyHint="Farmers register on USSD. Search by the phone they used, or clear the size class filter."
             headers={["Farmer", "County", "Land", "Class", "Fee", "Record"]}
             rows={query.data.items.map((row) => [
               <div key="n" className="min-w-40">

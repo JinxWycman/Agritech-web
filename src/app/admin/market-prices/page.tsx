@@ -51,7 +51,6 @@ export default function MarketPricesPage() {
           <Table
             caption="Market prices"
             emptyTitle="No market prices stored"
-            emptyHint="Use Pull KAMIS prices. If DNS or the source site is blocked, the list stays empty."
             headers={["Market", "Average", "Unit", "Date"]}
             rows={page.map((row) => [row.market_name, kes(row.average_price), row.unit, row.price_date])}
           />
