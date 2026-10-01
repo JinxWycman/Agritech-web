@@ -28,7 +28,9 @@ const HOP = new Set([
   "content-encoding",
 ]);
 
-async function proxy(request: NextRequest, context: { params: Promise<{ path: string[] }> | { path: string[] } }) {
+type RouteContext = { params: Promise<{ path: string[] }> };
+
+async function proxy(request: NextRequest, context: RouteContext) {
   const { path: segments } = await context.params;
   const allowed = allowedBackendPath(segments);
   if (!allowed) {
