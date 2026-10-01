@@ -31,7 +31,8 @@ export function stripRefreshFromStaffPayload(path: string, body: unknown): unkno
   if (path !== "/staff/login" && path !== "/staff/refresh") return body;
   if (!body || typeof body !== "object" || Array.isArray(body)) return body;
   if (!("refresh_token" in body)) return body;
-  const { refresh_token: _ignored, ...rest } = body as Record<string, unknown>;
+  const rest = { ...(body as Record<string, unknown>) };
+  delete rest.refresh_token;
   return rest;
 }
 
