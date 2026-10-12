@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, getStaffRole, logoutStaff } from "@/lib/api";
-import { isStaffRole } from "@/lib/http";
+import { isStaffRole, staffRoleLabel } from "@/lib/http";
 
 const PREFETCH: Record<string, { queryKey: readonly unknown[]; path: string }> = {
   "/admin/overview": { queryKey: ["overview"], path: "/admin/overview" },
@@ -163,7 +163,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const isOfficer = role === "officer" || (role === null && onOfficerRoute);
   const groups = isOfficer ? OFFICER_GROUPS : ADMIN_GROUPS;
   const meta = pageMeta(pathname);
-  const roleLabel = isOfficer ? "Field officer" : role === "platform_admin" || role === null ? "HQ Kenya" : "Staff";
+  const roleLabel = staffRoleLabel(role) || (isOfficer ? "Officer" : "Admin");
   useEffect(() => {
     document.title = `${meta.title} · Agritech`;
   }, [meta.title]);
@@ -269,7 +269,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   <KenyaClock />
                 </span>
                 <span className="hidden rounded border border-forest-800/20 bg-forest-50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-forest-900 sm:inline">
-                  {isOfficer ? "Field" : "Kenya HQ"}
+                  {isOfficer ? "Officer" : "Admin"}
                 </span>
                 <button
                   type="button"

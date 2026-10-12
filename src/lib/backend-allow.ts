@@ -1,8 +1,22 @@
 /**
  * Allow-list for the Next.js /backend proxy.
+ * The backend contract keeps the verified staff and farmer endpoints on the same-origin route.
  * Farmer phone webhooks and M-Pesa must stay on the API host — this site must not forward them.
  */
-const STAFF_PATHS = new Set(["/staff/login", "/staff/refresh", "/staff/me", "/staff/logout"]);
+const STAFF_PATHS = new Set([
+  "/staff/login",
+  "/staff/refresh",
+  "/staff/me",
+  "/staff/logout",
+]);
+
+const FARMER_PATHS = new Set([
+  "/auth/login",
+  "/auth/me",
+  "/farmers/login",
+  "/farmers/me",
+  "/farmers/change-pin",
+]);
 
 export function allowedBackendPath(segments: string[]): string | null {
   if (!segments.length) return null;
@@ -21,7 +35,7 @@ export function allowedBackendPath(segments: string[]): string | null {
     return null;
   }
   const path = `/${segments.join("/")}`;
-  if (STAFF_PATHS.has(path)) return path;
+  if (STAFF_PATHS.has(path) || FARMER_PATHS.has(path)) return path;
   if (path.startsWith("/admin/") && path.length > "/admin/".length) return path;
   return null;
 }

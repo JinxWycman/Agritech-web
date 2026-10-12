@@ -1,31 +1,45 @@
 /**
- * Staff console helpers that do not talk to the network.
+ * Backend contract mapping for the original Agritech staff models.
  *
- * Roles: platform_admin (HQ) and officer (field / vet visits).
- * Farmers never sign in here — this console is for staff only.
+ * The API contract is still defined by the backend as StaffUser + StaffRole
+ * with values: platform_admin and officer. These helpers keep the frontend
+ * aligned with that contract without rewriting the server model names.
  */
+export const STAFF_ROLE_VALUES = ["platform_admin", "officer"] as const;
+export const STAFF_PROXY_PATHS = ["/staff/login", "/staff/refresh", "/staff/me", "/staff/logout"] as const;
+
 export const STAFF_HOME = {
   platform_admin: "/admin/overview",
   officer: "/officer/overview",
 } as const;
 
-export type StaffRoleName = keyof typeof STAFF_HOME;
+export const STAFF_ROLE_LABELS = {
+  platform_admin: "Admin",
+  officer: "Officer",
+} as const;
+
+export type StaffRoleName = (typeof STAFF_ROLE_VALUES)[number];
 
 export function isStaffRole(value: string | null | undefined): value is StaffRoleName {
-  return value === "platform_admin" || value === "officer";
+  return STAFF_ROLE_VALUES.includes(value as StaffRoleName);
 }
 
 export function staffHome(role: string | null | undefined): string | null {
   return isStaffRole(role) ? STAFF_HOME[role] : null;
 }
 
-/** After login, only bounce back to our own /admin or /officer URLs — never to another website. */
+export function staffRoleLabel(role: string | null | undefined): string | null {
+  return isStaffRole(role) ? STAFF_ROLE_LABELS[role] : null;
+}
+
+/** After login, only bounce back to our own supported app routes — never to another website. */
 export function safeNextPath(value: string | null | undefined, role?: string | null): string | null {
   if (!value || value.length > 180) return null;
   if (!value.startsWith("/") || value.startsWith("//") || value.includes("\\") || value.includes("://")) return null;
   const pathOnly = value.split("?")[0];
   if (pathOnly.includes("..") || pathOnly.includes("#")) return null;
-  if (!pathOnly.startsWith("/admin") && !pathOnly.startsWith("/officer")) return null;
+  const allowed = pathOnly.startsWith("/admin") || pathOnly.startsWith("/officer") || pathOnly.startsWith("/farmer");
+  if (!allowed) return null;
   if (role === "officer" && pathOnly.startsWith("/admin")) return STAFF_HOME.officer;
   return value;
 }

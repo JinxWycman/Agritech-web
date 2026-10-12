@@ -20,6 +20,7 @@ export type Page<T> = {
 };
 
 let accessToken: string | null = null;
+let farmerAccessToken: string | null = null;
 let refreshInFlight: Promise<string | null> | null = null;
 
 function forgetLegacyStorage() {
@@ -30,6 +31,10 @@ function forgetLegacyStorage() {
 
 export function getAccessToken(): string | null {
   return accessToken;
+}
+
+export function getFarmerAccessToken(): string | null {
+  return farmerAccessToken;
 }
 
 export function getStaffRole(): string | null {
@@ -48,12 +53,20 @@ export function setSession(nextAccessToken: string, role: string) {
   writeRoleCookie(role);
 }
 
+export function setFarmerSession(nextAccessToken: string) {
+  farmerAccessToken = nextAccessToken;
+}
+
 export function clearSession() {
   accessToken = null;
   forgetLegacyStorage();
   if (typeof window === "undefined") return;
   const secure = window.location.protocol === "https:" ? "; Secure" : "";
   document.cookie = `staff_role=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
+}
+
+export function clearFarmerSession() {
+  farmerAccessToken = null;
 }
 
 function getCookie(name: string): string | null {
@@ -188,6 +201,76 @@ export async function logoutStaff() {
     /* still clear the local session */
   }
   clearSession();
+}
+
+export async function loginFarmer(phone_number: string, pin: string) {
+  let response: Response;
+  try {
+    response = await timedFetch(`${PROXY}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone_number, pin }),
+    });
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(OFFLINE_MESSAGE, 0);
+  }
+
+  if (!response.ok) {
+    throw new ApiError(await readDetail(response, "Login failed"), response.status);
+  }
+
+  const data = (await response.json()) as { access_token?: string; token_type?: string };
+  if (!data.access_token) {
+    throw new ApiError("This account cannot open the farmer portal.", 403);
+  }
+
+  setFarmerSession(data.access_token);
+  return data;
+}
+
+export async function farmerApi<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
+  const token = getFarmerAccessToken();
+  if (!token) {
+    throw new ApiError("Please sign in to continue.", 401);
+  }
+
+  const headers = new Headers(options.headers);
+  headers.set("Authorization", `Bearer ${token}`);
+  if (!headers.has("Content-Type") && options.body) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  let response: Response;
+  try {
+    response = await timedFetch(`${PROXY}${path}`, { ...options, headers });
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(OFFLINE_MESSAGE, 0);
+  }
+
+  if (response.status === 401 && !retried) {
+    clearFarmerSession();
+    throw new ApiError("Session expired. Sign in again.", 401);
+  }
+
+  if (!response.ok) {
+    const fallback = response.statusText || "Request failed";
+    throw new ApiError(await readDetail(response, fallback), response.status);
+  }
+
+  if (response.status === 204) return undefined as T;
+  return response.json() as Promise<T>;
+}
+
+export async function getFarmerProfile() {
+  return farmerApi<{ id: string; full_name: string; national_id: string; phone_number: string; county_id: string; is_active: boolean }>(
+    "/auth/me",
+  );
+}
+
+export function logoutFarmer() {
+  clearFarmerSession();
 }
 
 export { ApiError };

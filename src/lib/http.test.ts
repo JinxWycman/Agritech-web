@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { formatApiDetail, isStaffRole, safeNextPath, staffHome } from "./http.ts";
+import { formatApiDetail, isStaffRole, safeNextPath, staffHome, staffRoleLabel } from "./http.ts";
 
 describe("staffHome", () => {
   it("maps only the two staff roles to known paths", () => {
@@ -11,6 +11,12 @@ describe("staffHome", () => {
     assert.equal(staffHome(null), null);
   });
 
+  it("maps the original backend roles to the correct UI labels", () => {
+    assert.equal(staffRoleLabel("platform_admin"), "Admin");
+    assert.equal(staffRoleLabel("officer"), "Officer");
+    assert.equal(staffRoleLabel("unknown"), null);
+  });
+
   it("rejects unknown role strings", () => {
     assert.equal(isStaffRole("platform_admin"), true);
     assert.equal(isStaffRole("officer"), true);
@@ -19,9 +25,10 @@ describe("staffHome", () => {
 });
 
 describe("safeNextPath", () => {
-  it("allows in-app staff routes and blocks open redirects", () => {
+  it("allows supported in-app routes and blocks open redirects", () => {
     assert.equal(safeNextPath("/admin/farmers"), "/admin/farmers");
     assert.equal(safeNextPath("/officer/requests"), "/officer/requests");
+    assert.equal(safeNextPath("/farmer/overview"), "/farmer/overview");
     assert.equal(safeNextPath("https://evil.example/admin"), null);
     assert.equal(safeNextPath("//evil.example"), null);
     assert.equal(safeNextPath("/login"), null);

@@ -15,7 +15,7 @@ type Expert = {
   is_available: boolean;
 };
 
-type StaffUser = {
+type ConsoleAccount = {
   id: string;
   full_name: string;
   phone_number: string;
@@ -31,21 +31,21 @@ type County = {
 
 type FieldOfficerResult = {
   expert: Expert;
-  staff: StaffUser;
+  staff: ConsoleAccount;
 };
 
 const PAGE_SIZE = 20;
 const DISCIPLINES = ["Agriculture", "Veterinary"] as const;
 
-function consoleAccess(expertId: string, staffByExpert: Map<string, StaffUser>) {
+function consoleAccess(expertId: string, staffByExpert: Map<string, ConsoleAccount>) {
   const login = staffByExpert.get(expertId);
   if (!login) {
-    return { label: "Directory only", tone: "zinc" as const };
+    return { label: "No console access", tone: "zinc" as const };
   }
   if (!login.is_active) {
-    return { label: "Inactive", tone: "amber" as const };
+    return { label: "Inactive account", tone: "amber" as const };
   }
-  return { label: "Can sign in", tone: "green" as const };
+  return { label: "Console access", tone: "green" as const };
 }
 
 export default function ExpertsPage() {
@@ -70,18 +70,23 @@ export default function ExpertsPage() {
   });
   const staff = useQuery({
     queryKey: ["staff"],
-    queryFn: () => api<Page<StaffUser>>("/admin/staff"),
+    queryFn: () => api<Page<ConsoleAccount>>("/admin/staff"),
   });
 
   const countyMap = useMemo(() => new Map((counties.data || []).map((row) => [row.id, row.name])), [counties.data]);
 
   const staffByExpert = useMemo(() => {
-    const map = new Map<string, StaffUser>();
+    const map = new Map<string, ConsoleAccount>();
     for (const row of staff.data?.items || []) {
       if (row.expert_id && row.role === "officer") map.set(row.expert_id, row);
     }
     return map;
   }, [staff.data]);
+
+  const activeOfficerAccounts = useMemo(
+    () => (staff.data?.items || []).filter((row) => row.role === "officer").length,
+    [staff.data],
+  );
 
   const createOfficer = useMutation({
     mutationFn: () =>
@@ -98,7 +103,7 @@ export default function ExpertsPage() {
         }),
       }),
     onSuccess: (data) => {
-      setSaved(`${data.expert.full_name} can sign in.`);
+      setSaved(`${data.expert.full_name} has a field-officer console account.`);
       setFullName("");
       setPhone("");
       setPassword("");
@@ -129,7 +134,7 @@ export default function ExpertsPage() {
 
   return (
     <div className="space-y-8">
-      <Section eyebrow="Roster" title="Add a field officer">
+      <Section eyebrow="Roster" title="Create a field officer">
         <Panel className="p-5 md:p-6">
           {!countyReady && !counties.isLoading ? (
             <State
@@ -222,7 +227,7 @@ export default function ExpertsPage() {
               </Field>
               <div className="md:col-span-2 flex flex-wrap items-center gap-3">
                 <Button type="submit" disabled={createOfficer.isPending || !formValid || counties.isLoading}>
-                  {createOfficer.isPending ? "Creating officer…" : "Create officer & login"}
+                  {createOfficer.isPending ? "Creating field officer…" : "Create field officer"}
                 </Button>
                 {counties.isLoading ? <span className="text-xs text-stone-500">Loading counties…</span> : null}
               </div>
@@ -238,9 +243,13 @@ export default function ExpertsPage() {
         {createOfficer.isError ? <Notice tone="error">{(createOfficer.error as Error).message}</Notice> : null}
       </Section>
 
-      <Section title="Officers">
+      <Section title="Expert roster and field officer access">
         <div className="space-y-4">
           {staff.isError ? <LoadError error={staff.error} onRetry={() => staff.refetch()} /> : null}
+          <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-stone-600">
+            <span>{experts.data?.items.length ?? 0} expert records</span>
+            <span>{activeOfficerAccounts} field-officer console accounts</span>
+          </div>
           <Table
             caption="Field officers"
             emptyTitle="No officers"

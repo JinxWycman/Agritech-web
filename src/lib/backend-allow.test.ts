@@ -3,10 +3,15 @@ import { describe, it } from "node:test";
 import { allowedBackendPath, rewriteSetCookie, stripRefreshFromStaffPayload } from "./backend-allow.ts";
 
 describe("allowedBackendPath", () => {
-  it("allows staff session routes and admin APIs", () => {
+  it("allows staff, farmer, and admin routes on the verified contract", () => {
     assert.equal(allowedBackendPath(["staff", "login"]), "/staff/login");
     assert.equal(allowedBackendPath(["staff", "refresh"]), "/staff/refresh");
+    assert.equal(allowedBackendPath(["staff", "me"]), "/staff/me");
     assert.equal(allowedBackendPath(["staff", "logout"]), "/staff/logout");
+    assert.equal(allowedBackendPath(["auth", "login"]), "/auth/login");
+    assert.equal(allowedBackendPath(["auth", "me"]), "/auth/me");
+    assert.equal(allowedBackendPath(["farmers", "me"]), "/farmers/me");
+    assert.equal(allowedBackendPath(["farmers", "change-pin"]), "/farmers/change-pin");
     assert.equal(allowedBackendPath(["admin", "overview"]), "/admin/overview");
     assert.equal(allowedBackendPath(["admin", "farmers", "a-id"]), "/admin/farmers/a-id");
   });
