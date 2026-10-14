@@ -37,11 +37,11 @@ export default {
       },
       fontFamily: {
         sans: ["var(--font-geist-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
-        serif: ["var(--font-instrument)", "Georgia", "serif"],
+        serif: ["var(--font-geist-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ["ui-monospace", "monospace"],
       },
       boxShadow: {
-        panel: "0 1px 2px rgba(16, 40, 30, 0.04), 0 12px 32px rgba(16, 40, 30, 0.06)",
+        panel: "var(--shadow-panel)",
       },
     },
   },

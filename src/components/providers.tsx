@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider, keepPreviousData } from "@tanstack/re
 import { useEffect, useState } from "react";
 import { bootstrapSession } from "@/lib/api";
 import { ApiError } from "@/lib/http";
+import { getDataMode } from "@/lib/data-mode";
 
 function shouldRetry(failureCount: number, error: unknown) {
   // Do not hammer the API when the password is wrong or the role is forbidden.
@@ -29,7 +30,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       }),
   );
   useEffect(() => {
-    void bootstrapSession();
+    if (getDataMode() === "api") void bootstrapSession();
   }, []);
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }

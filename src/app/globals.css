@@ -7,6 +7,24 @@
   --background: #efe6d4;
   --foreground: #1c1914;
   --paper: #faf6ee;
+  --surface: #fffdf8;
+  --border: #d8d0c1;
+  --muted: #625d53;
+  --focus: #2f6f52;
+  --shadow-panel: 0 1px 2px rgba(16, 40, 30, 0.04), 0 12px 32px rgba(16, 40, 30, 0.06);
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --background: #141a16;
+  --foreground: #f4f1e8;
+  --paper: #1d2721;
+  --surface: #253129;
+  --border: #46554b;
+  --muted: #c1c9c2;
+  --focus: #9bd0ad;
+  --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.24), 0 12px 32px rgba(0, 0, 0, 0.18);
+  color-scheme: dark;
 }
 
 html {
@@ -16,20 +34,23 @@ html {
 body {
   color: var(--foreground);
   background-color: var(--background);
-  background-image:
-    radial-gradient(900px 420px at 0% -8%, rgba(28, 71, 53, 0.09), transparent 55%),
-    radial-gradient(700px 360px at 100% 0%, rgba(140, 106, 69, 0.1), transparent 50%),
-    repeating-linear-gradient(-18deg, transparent, transparent 10px, rgba(72, 52, 28, 0.018) 11px);
+  background-image: radial-gradient(900px 420px at 0% -8%, rgba(28, 71, 53, 0.09), transparent 55%);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer components {
   .field-input {
-    @apply w-full rounded-lg border border-stone-400/50 bg-white px-3.5 py-2.5 text-sm text-stone-800 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-forest-600 focus:ring-4 focus:ring-forest-600/15;
+    @apply w-full rounded-lg border px-3.5 py-2.5 text-sm shadow-sm outline-none transition focus:ring-4;
+    color: var(--foreground);
+    border-color: var(--border);
+    background: var(--surface);
+    --tw-ring-color: color-mix(in srgb, var(--focus) 25%, transparent);
   }
 
   .panel {
-    @apply rounded-lg border border-stone-400/25 bg-[var(--paper)] shadow-panel;
+    @apply rounded-lg border shadow-panel;
+    border-color: var(--border);
+    background-color: var(--paper);
   }
 
   .nav-scroll {

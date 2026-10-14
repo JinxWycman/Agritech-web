@@ -8,11 +8,6 @@
 export const STAFF_ROLE_VALUES = ["platform_admin", "officer"] as const;
 export const STAFF_PROXY_PATHS = ["/staff/login", "/staff/refresh", "/staff/me", "/staff/logout"] as const;
 
-export const STAFF_HOME = {
-  platform_admin: "/admin/overview",
-  officer: "/officer/overview",
-} as const;
-
 export const STAFF_ROLE_LABELS = {
   platform_admin: "Admin",
   officer: "Officer",
@@ -25,7 +20,10 @@ export function isStaffRole(value: string | null | undefined): value is StaffRol
 }
 
 export function staffHome(role: string | null | undefined): string | null {
-  return isStaffRole(role) ? STAFF_HOME[role] : null;
+  if (role === "farmer") return "/app/overview";
+  if (role === "expert") return "/expert/overview";
+  if (role === "admin") return "/admin/overview";
+  return null;
 }
 
 export function staffRoleLabel(role: string | null | undefined): string | null {
@@ -38,9 +36,12 @@ export function safeNextPath(value: string | null | undefined, role?: string | n
   if (!value.startsWith("/") || value.startsWith("//") || value.includes("\\") || value.includes("://")) return null;
   const pathOnly = value.split("?")[0];
   if (pathOnly.includes("..") || pathOnly.includes("#")) return null;
-  const allowed = pathOnly.startsWith("/admin") || pathOnly.startsWith("/officer") || pathOnly.startsWith("/farmer");
+  const allowed = pathOnly.startsWith("/admin") || pathOnly.startsWith("/expert") || pathOnly.startsWith("/app");
   if (!allowed) return null;
-  if (role === "officer" && pathOnly.startsWith("/admin")) return STAFF_HOME.officer;
+  if (role === "expert" && pathOnly.startsWith("/admin")) return "/expert/overview";
+  if (role === "farmer" && !pathOnly.startsWith("/app")) return "/app/overview";
+  if (role === "admin" && !pathOnly.startsWith("/admin")) return "/admin/overview";
+  if (role === "expert" && !pathOnly.startsWith("/expert")) return "/expert/overview";
   return value;
 }
 
@@ -81,3 +82,15 @@ export class ApiError extends Error {
 }
 
 export const OFFLINE_MESSAGE = "Cannot reach the server.";
+
+export async function httpRequest(
+  url: string,
+  init: RequestInit,
+  mode: "mock" | "api" = process.env.NEXT_PUBLIC_DATA_MODE === "api" ? "api" : "mock",
+  fetcher: typeof fetch = fetch,
+): Promise<Response> {
+  if (mode === "mock") {
+    throw new ApiError("Backend requests are disabled in mock mode.", 0);
+  }
+  return fetcher(url, init);
+}

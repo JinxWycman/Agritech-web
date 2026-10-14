@@ -13,7 +13,7 @@ const PREFETCH: Record<string, { queryKey: readonly unknown[]; path: string }> =
   "/admin/requests": { queryKey: ["requests", "All", 0], path: "/admin/expert-requests?limit=20&offset=0" },
   "/admin/quotes": { queryKey: ["quotes", 0], path: "/admin/quotes?limit=20&offset=0" },
   "/admin/experts": { queryKey: ["experts", 0], path: "/admin/experts?limit=20&offset=0" },
-  "/officer/requests": { queryKey: ["requests", "All", 0], path: "/admin/expert-requests?limit=20&offset=0" },
+  "/expert/requests": { queryKey: ["requests", "All", 0], path: "/admin/expert-requests?limit=20&offset=0" },
 };
 
 type NavLink = { href: string; label: string; hint?: string };
@@ -59,9 +59,9 @@ const OFFICER_GROUPS: NavGroup[] = [
   {
     label: "My field day",
     links: [
-      { href: "/officer/overview", label: "Queue" },
-      { href: "/officer/requests", label: "Visits" },
-      { href: "/officer/availability", label: "On duty" },
+      { href: "/expert/overview", label: "Queue" },
+      { href: "/expert/requests", label: "Visits" },
+      { href: "/expert/availability", label: "On duty" },
     ],
   },
 ];
@@ -79,9 +79,9 @@ const PAGE_COPY: Record<string, { title: string; description?: string }> = {
   "/admin/subscriptions": { title: "Subscriptions" },
   "/admin/sms-sessions": { title: "Farmer sessions" },
   "/admin/audit": { title: "Audit trail" },
-  "/officer/overview": { title: "Queue" },
-  "/officer/requests": { title: "Visits" },
-  "/officer/availability": { title: "On duty" },
+  "/expert/overview": { title: "Queue" },
+  "/expert/requests": { title: "Visits" },
+  "/expert/availability": { title: "On duty" },
 };
 
 function pageMeta(pathname: string) {
@@ -146,7 +146,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
     if (!isStaffRole(next)) return;
     setRole(next);
     if (next === "officer" && pathname.startsWith("/admin")) {
-      router.replace("/officer/overview");
+      router.replace("/expert/overview");
     }
   }, [session.data, pathname, router]);
   useEffect(() => {

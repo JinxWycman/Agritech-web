@@ -1,32 +1,59 @@
-# Agritech
+# Agritech AI
 
-Staff console for Agritech (platform admins and field officers). This repo is the web dashboard only.
+Next.js App Router web application for the Agritech AI farmer, expert, and admin portals.
 
-## Connect to the deployed API
+## Data modes and authentication
 
-Set this on Vercel (or in `.env.local` for local work):
+The default mode is mock:
 
+```env
+NEXT_PUBLIC_DATA_MODE=mock
+NEXT_PUBLIC_MOCK_DELAY_MS=80
 ```
-NEXT_PUBLIC_API_URL=https://YOUR-DEPLOYED-API-HOST
+
+Mock mode does not send requests to the backend. Use the login persona picker or the in-app Demo controls to switch between the Farmer, Expert, and Admin personas and the success, empty, and error scenarios. All displayed records are deterministic sample data. Demo authorization is only a navigation aid, not security.
+
+To try API adapters after configuring a compatible API:
+
+```env
+NEXT_PUBLIC_DATA_MODE=api
+NEXT_PUBLIC_API_BASE_URL=https://YOUR-API-HOST
 ```
 
-No trailing slash. The app calls `/backend/...` on this Next server; that route forwards only `/staff/*` session paths and `/admin/*` to the API.
+No trailing slash. The browser calls the same-origin Next.js `/backend/...` proxy; the frontend contains no API secret. Existing endpoint adapters preserve legacy request behavior but are marked unconfirmed against the backend currently being changed. Unconfirmed resource adapters deliberately report that they are not implemented.
 
-The live API must already expose `/staff/login` and `/admin/overview`.
+Role cookies in either mode are navigation aids only. The FastAPI backend must enforce real authentication and authorization. Demo mode never asks for or stores a PIN, password, or token.
 
-## Local
+## Local development
 
 ```bash
-cp .env.example .env.local
 npm install
 npm run dev
 ```
 
-Open http://localhost:3000. The API should be running at the URL in `.env.local` (default `http://127.0.0.1:8000` if unset).
+Open http://localhost:3000. The demo login works without backend credentials.
 
-## Deploy on Vercel
+## Checks
 
-1. Import this repository.
-2. Root Directory: leave as `.` (this repo is the Next app).
-3. Add `NEXT_PUBLIC_API_URL` for Production.
-4. Deploy, then open the Vercel URL and sign in with a staff account from the API.
+```bash
+npm run lint
+npm run typecheck
+npm test
+npm run build
+```
+
+## Routes
+
+- `/login` is the shared login screen.
+- `/app` is the farmer portal.
+- `/expert` is the expert portal.
+- `/admin` is the admin portal.
+- Old `/farmer/*` and `/officer/*` links redirect to the new portal prefixes.
+
+## Farmer profile and map tiles
+
+The farmer profile stores demo form data in browser local storage only. County display is an approximate nearest-centre estimate; the backend must resolve county from saved coordinates. The map uses OpenStreetMap tiles. OSM's public tile server is for light use only; production deployments need a tile provider or self-hosted tiles.
+
+## Status
+
+This is a mock-first Phase 2 implementation, not production-ready. Profile writes and farm conditions are not implemented in API mode; current legacy API calls and contract gaps are tracked in [docs/missing-endpoints.md](./docs/missing-endpoints.md).

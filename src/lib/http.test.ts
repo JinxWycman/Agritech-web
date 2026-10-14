@@ -3,10 +3,12 @@ import { describe, it } from "node:test";
 import { formatApiDetail, isStaffRole, safeNextPath, staffHome, staffRoleLabel } from "./http.ts";
 
 describe("staffHome", () => {
-  it("maps only the two staff roles to known paths", () => {
-    assert.equal(staffHome("platform_admin"), "/admin/overview");
-    assert.equal(staffHome("officer"), "/officer/overview");
-    assert.equal(staffHome("admin"), null);
+  it("maps only frontend portal roles to their home pages", () => {
+    assert.equal(staffHome("admin"), "/admin/overview");
+    assert.equal(staffHome("expert"), "/expert/overview");
+    assert.equal(staffHome("farmer"), "/app/overview");
+    assert.equal(staffHome("platform_admin"), null);
+    assert.equal(staffHome("officer"), null);
     assert.equal(staffHome("../admin"), null);
     assert.equal(staffHome(null), null);
   });
@@ -27,13 +29,13 @@ describe("staffHome", () => {
 describe("safeNextPath", () => {
   it("allows supported in-app routes and blocks open redirects", () => {
     assert.equal(safeNextPath("/admin/farmers"), "/admin/farmers");
-    assert.equal(safeNextPath("/officer/requests"), "/officer/requests");
-    assert.equal(safeNextPath("/farmer/overview"), "/farmer/overview");
+    assert.equal(safeNextPath("/expert/requests"), "/expert/requests");
+    assert.equal(safeNextPath("/app/overview"), "/app/overview");
     assert.equal(safeNextPath("https://evil.example/admin"), null);
     assert.equal(safeNextPath("//evil.example"), null);
     assert.equal(safeNextPath("/login"), null);
     assert.equal(safeNextPath("/admin/../ussd"), null);
-    assert.equal(safeNextPath("/admin/overview", "officer"), "/officer/overview");
+    assert.equal(safeNextPath("/admin/overview", "expert"), "/expert/overview");
   });
 });
 

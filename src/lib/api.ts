@@ -2,10 +2,10 @@
  * How the browser talks to FastAPI.
  *
  * Pages call api("/admin/overview") ? never the Render URL directly.
- * Next.js forwards /backend/... to NEXT_PUBLIC_API_URL. The API still checks the JWT.
+ * Next.js forwards /backend/... to NEXT_PUBLIC_API_BASE_URL. The API still checks the JWT.
  * Access token stays in memory. Refresh token stays in an HttpOnly cookie.
  */
-import { ApiError, OFFLINE_MESSAGE, formatApiDetail, isStaffRole, safeNextPath } from "@/lib/http";
+import { ApiError, OFFLINE_MESSAGE, formatApiDetail, httpRequest, isStaffRole, safeNextPath } from "@/lib/http";
 
 const PROXY = "/backend";
 const REQUEST_TIMEOUT_MS = 12_000;
@@ -51,10 +51,18 @@ export function setSession(nextAccessToken: string, role: string) {
   if (!isStaffRole(role)) return;
   accessToken = nextAccessToken;
   writeRoleCookie(role);
+  writePortalRoleCookie(role === "platform_admin" ? "admin" : "expert");
 }
 
 export function setFarmerSession(nextAccessToken: string) {
   farmerAccessToken = nextAccessToken;
+  writePortalRoleCookie("farmer");
+}
+
+function writePortalRoleCookie(role: string) {
+  if (typeof window === "undefined") return;
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `portal_role=${encodeURIComponent(role)}; Path=/; Max-Age=${String(60 * 60 * 24 * 14)}; SameSite=Lax${secure}`;
 }
 
 export function clearSession() {
@@ -63,10 +71,15 @@ export function clearSession() {
   if (typeof window === "undefined") return;
   const secure = window.location.protocol === "https:" ? "; Secure" : "";
   document.cookie = "staff_role=; Path=/; Max-Age=0; SameSite=Lax" + secure;
+  document.cookie = "portal_role=; Path=/; Max-Age=0; SameSite=Lax" + secure;
 }
 
 export function clearFarmerSession() {
   farmerAccessToken = null;
+  if (typeof window !== "undefined") {
+    document.cookie = "farmer_role=; Path=/; Max-Age=0; SameSite=Lax";
+    document.cookie = "portal_role=; Path=/; Max-Age=0; SameSite=Lax";
+  }
 }
 
 function getCookie(name: string): string | null {
@@ -87,7 +100,7 @@ async function timedFetch(url: string, init: RequestInit): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
-    return await fetch(url, {
+    return await httpRequest(url, {
       ...init,
       signal: init.signal ?? controller.signal,
       credentials: "same-origin",

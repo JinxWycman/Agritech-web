@@ -1,0 +1,1 @@
+export { adminSummaryService } from "@/services";

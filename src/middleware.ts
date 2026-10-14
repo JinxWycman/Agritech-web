@@ -1,43 +1,34 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { safeNextPath } from "@/lib/http";
+import { guardedDestination, homeForRole, legacyRoute } from "@/lib/route-guards";
+import type { UserRole } from "@/types/domain";
 
 /**
- * Door check only. Real permission is the staff JWT on the API.
- * staff_role cookie just sends admins and officers to the right home page.
+ * Navigation aid only. Demo cookies contain a persona, never credentials.
+ * API mode cookies also only route users; the backend must enforce authorization.
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const role = request.cookies.get("staff_role")?.value;
+  const mode = process.env.NEXT_PUBLIC_DATA_MODE === "api" ? "api" : "mock";
+  const role = mode === "mock"
+    ? request.cookies.get("demo_role")?.value
+    : request.cookies.get("portal_role")?.value;
+  const validRole: UserRole | null = role === "farmer" || role === "expert" || role === "admin" ? role : null;
 
-  const isAdmin = role === "platform_admin";
-  const isOfficer = role === "officer";
-
-  if (pathname.startsWith("/admin") || pathname.startsWith("/officer")) {
-    if (!isAdmin && !isOfficer) {
-      const login = new URL("/login", request.url);
-      const next = `${pathname}${request.nextUrl.search}`;
-      if (next.startsWith("/admin") || next.startsWith("/officer")) {
-        login.searchParams.set("next", next.slice(0, 180));
-      }
-      return NextResponse.redirect(login);
-    }
-    if (pathname.startsWith("/admin") && !isAdmin) {
-      return NextResponse.redirect(new URL("/officer/overview", request.url));
-    }
+  const oldPath = legacyRoute(pathname);
+  if (oldPath) return NextResponse.redirect(new URL(oldPath + request.nextUrl.search, request.url));
+  if (pathname === "/") {
+    const home = validRole ? homeForRole(validRole) : "/login";
+    return NextResponse.redirect(new URL(home, request.url));
   }
-
-  if (pathname === "/login" && isAdmin) {
-    const dest = safeNextPath(request.nextUrl.searchParams.get("next"), "platform_admin") || "/admin/overview";
-    return NextResponse.redirect(new URL(dest, request.url));
+  const guardDestination = guardedDestination(pathname, request.nextUrl.search, validRole);
+  if (guardDestination) return NextResponse.redirect(new URL(guardDestination, request.url));
+  if (pathname === "/login" && validRole) {
+    return NextResponse.redirect(new URL(homeForRole(validRole), request.url));
   }
-  if (pathname === "/login" && isOfficer) {
-    return NextResponse.redirect(new URL("/officer/overview", request.url));
-  }
-
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/officer/:path*", "/login"],
+  matcher: ["/", "/app/:path*", "/expert/:path*", "/admin/:path*", "/farmer/:path*", "/officer/:path*", "/login"],
 };
