@@ -25,3 +25,12 @@ export function toE164Kenya(input: string): string | null {
   if (digits.length !== 9) return null;
   return `+254${digits}`;
 }
+
+/** WhatsApp wa.me format: country code and national number, without a plus sign. */
+export function toWhatsAppKenya(input: string): string | null {
+  const digits = input.replace(/\D/g, "");
+  const nationalDigits = digits.startsWith("254") ? digits.slice(3) : digits.startsWith("0") ? digits.slice(1) : digits;
+  if (nationalDigits.length !== 9) return null;
+  const e164 = toE164Kenya(input);
+  return e164 ? e164.slice(1) : null;
+}

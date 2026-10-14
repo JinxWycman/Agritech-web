@@ -11,7 +11,7 @@ import {
 } from "@/lib/api";
 import { ApiError } from "@/lib/http";
 import type { AdminSummary, Expert, ExpertQueueSummary, FarmerDashboardSummary } from "@/types/domain";
-import type { AuthService, AdminSummaryService, ExpertRequestService, ExpertsService, FarmerService, LifecycleExpertRequestService, LifecycleExpertsService, RequestSettingsService, SymptomsService } from "@/services/contracts";
+import type { AuthService, AdminSummaryService, ExpertRequestService, ExpertsService, FarmerService, LifecycleExpertRequestService, LifecycleExpertsService, RecommendationService, RequestSettingsService, SymptomsService, VendorService } from "@/services/contracts";
 
 export function mapBackendStaffRole(role: string): "admin" | "expert" {
   if (role === "platform_admin") return "admin";
@@ -162,4 +162,15 @@ export const apiSymptomsService: SymptomsService = {
 export const apiRequestSettingsService: RequestSettingsService = {
   async get() { return lifecycleNotImplemented("Expert-request settings"); },
   async update() { return lifecycleNotImplemented("Expert-request settings update"); },
+};
+
+export const apiRecommendationService: RecommendationService = {
+  async getForFarm() { return lifecycleNotImplemented("Crop and livestock recommendations"); },
+};
+
+export const apiVendorService: VendorService = {
+  async list() { return lifecycleNotImplemented("Vendor directory and filters"); },
+  async getById() { return lifecycleNotImplemented("Vendor profile"); },
+  async getProducts() { return lifecycleNotImplemented("Vendor product offers"); },
+  async recordEvent() { return lifecycleNotImplemented("Vendor view and contact events"); },
 };

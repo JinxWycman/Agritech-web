@@ -6,6 +6,11 @@ import type { UserRole } from "@/types/domain";
 import type { AuthService, AdminSummaryService, ExpertRequestService, ExpertsService, FarmerService, LifecycleExpertRequestService, LifecycleExpertsService, RequestSettingsService, SymptomsService } from "@/services/contracts";
 import { resolveScenario } from "@/mocks/scenarios";
 import { demoSymptoms } from "@/mocks/fixtures";
+import { demoAgroZones, demoCropVarieties, demoLivestockBreeds, demoVendorProducts, demoVendors } from "@/mocks/business-catalogue";
+import { buildRecommendations, nearestAgroZone } from "@/lib/recommendations";
+import { filterAndSortVendors } from "@/lib/vendor-search";
+import type { RecommendationService, VendorService } from "@/services/contracts";
+import type { VendorPortalStats } from "@/types/business";
 
 function assertDemoHealthy(): void {
   if (getDemoScenario() === "error") throw new Error("Demo service error scenario.");
@@ -188,5 +193,75 @@ export const mockAdminSummaryService: AdminSummaryService = {
       };
     }
     return resolveScenario(scenario, demoAdminSummary, demoAdminSummary);
+  },
+};
+
+export const DEMO_VENDOR_EVENTS_KEY = "agritech_demo_vendor_events_v1";
+
+type VendorEventStore = Record<string, VendorPortalStats>;
+
+function readVendorEvents(): VendorEventStore {
+  if (typeof window === "undefined") return {};
+  const raw = window.localStorage.getItem(DEMO_VENDOR_EVENTS_KEY);
+  if (!raw) return {};
+  const parsed: unknown = JSON.parse(raw);
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("Demo vendor event data is invalid. Reset demo data to continue.");
+  }
+  for (const value of Object.values(parsed)) {
+    if (!value || typeof value !== "object" || !Number.isInteger(value.views) || !Number.isInteger(value.contacts)) {
+      throw new Error("Demo vendor event counts are invalid. Reset demo data to continue.");
+    }
+  }
+  return parsed as VendorEventStore;
+}
+
+function assertBusinessSuccess(): void {
+  if (getDemoScenario() === "error") throw new Error("Demo service error scenario.");
+}
+
+export const mockRecommendationService: RecommendationService = {
+  async getForFarm(kind, point, conditions) {
+    await delay();
+    assertBusinessSuccess();
+    if (getDemoScenario() === "empty") return null;
+    const zone = nearestAgroZone(point, demoAgroZones);
+    if (!zone) return null;
+    const vendors = filterAndSortVendors(demoVendors, demoVendorProducts, {}, point);
+    const catalogue = kind === "crop" ? demoCropVarieties : demoLivestockBreeds;
+    return {
+      zone,
+      recommendations: buildRecommendations(kind, catalogue, zone, vendors, demoVendorProducts, conditions),
+    };
+  },
+};
+
+export const mockVendorService: VendorService = {
+  async list(filters, point) {
+    await delay();
+    assertBusinessSuccess();
+    if (getDemoScenario() === "empty") return [];
+    return filterAndSortVendors(demoVendors, demoVendorProducts, filters, point);
+  },
+  async getById(id) {
+    await delay();
+    assertBusinessSuccess();
+    if (getDemoScenario() === "empty") return null;
+    return demoVendors.find((vendor) => vendor.id === id) ?? null;
+  },
+  async getProducts(vendorId) {
+    await delay();
+    assertBusinessSuccess();
+    if (getDemoScenario() === "empty") return [];
+    return demoVendorProducts.filter((product) => product.vendorId === vendorId);
+  },
+  async recordEvent(vendorId, event) {
+    assertBusinessSuccess();
+    if (!demoVendors.some((vendor) => vendor.id === vendorId)) throw new Error("Sample vendor was not found.");
+    const all = readVendorEvents();
+    const counts = all[vendorId] ?? { views: 0, contacts: 0 };
+    const updated = { ...counts, [event === "view" ? "views" : "contacts"]: counts[event === "view" ? "views" : "contacts"] + 1 };
+    if (typeof window !== "undefined") window.localStorage.setItem(DEMO_VENDOR_EVENTS_KEY, JSON.stringify({ ...all, [vendorId]: updated }));
+    return updated;
   },
 };

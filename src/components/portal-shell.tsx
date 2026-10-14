@@ -21,7 +21,7 @@ const navigation: Record<UserRole, Item[]> = {
     { key: "risks", suffix: "/risks", phase: 6 },
     { key: "prices", suffix: "/market-prices", phase: 5 },
     { key: "requests", suffix: "/requests", phase: 1 },
-    { key: "vendors", suffix: "/vendors", phase: 4 },
+    { key: "vendors", suffix: "/agrovets", phase: 4 },
     { key: "notifications", suffix: "/notifications", phase: 6 },
     { key: "settings", suffix: "/settings", phase: 7 },
   ],
@@ -48,7 +48,7 @@ const navigation: Record<UserRole, Item[]> = {
 };
 
 const roots: Record<UserRole, string> = { farmer: "/app", expert: "/expert", admin: "/admin" };
-const supportedDemoScreens = new Set(["/app/overview", "/app/profile", "/expert/overview", "/expert/requests", "/expert/availability", "/admin/overview", "/admin/requests", "/app/requests", "/app/requests/new"]);
+const supportedDemoScreens = new Set(["/app/overview", "/app/profile", "/app/recommendations", "/app/livestock", "/app/agrovets", "/expert/overview", "/expert/requests", "/expert/availability", "/admin/overview", "/admin/requests", "/app/requests", "/app/requests/new"]);
 
 export function portalRouteItem(role: UserRole, pathname: string) {
   return navigation[role].find((item) => `${roots[role]}${item.suffix}` === pathname);
@@ -61,7 +61,8 @@ export function PortalShell({ role, children }: { role: UserRole; children: Reac
   const router = useRouter();
   const mockMode = getDataMode() === "mock";
   const isFarmerRequestDetail = /^\/app\/requests\/[^/]+$/.test(pathname);
-  const unavailable = mockMode && !supportedDemoScreens.has(pathname) && !isFarmerRequestDetail;
+  const isVendorProfile = /^\/app\/agrovets\/[^/]+$/.test(pathname);
+  const unavailable = mockMode && !supportedDemoScreens.has(pathname) && !isFarmerRequestDetail && !isVendorProfile;
 
   async function signOut() {
     await authService.logout();

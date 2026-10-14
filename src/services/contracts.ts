@@ -39,6 +39,8 @@ export type FarmerRequestsService = {
 };
 
 import type { ExpertRequestRecord, FarmPoint, RequestSettings, RequestUrgency, ScoredExpert } from "@/lib/request-lifecycle";
+import type { AgroZone, Recommendation, Vendor, VendorPortalStats, VendorProduct, VendorProductUpdate, VendorSearchFilters, VendorShopProfile, VendorWithDistance } from "@/types/business";
+import type { Coordinates } from "@/lib/kenya-location";
 
 export type NewExpertRequestInput = {
   issueType: "crop" | "livestock"; symptomCodes: string[]; urgency: RequestUrgency; note: string; preferredTime: string;
@@ -88,3 +90,26 @@ export type AdminSummaryService = {
 export type ResourceService<T> = {
   list(): Promise<T[]>;
 };
+
+export type RecommendationService = {
+  getForFarm(
+    kind: "crop" | "livestock",
+    point: Coordinates,
+    conditions?: Pick<FarmConditionsSnapshot, "ndviTrend" | "rainfallTrend"> | null,
+  ): Promise<{ zone: AgroZone; recommendations: Recommendation[] } | null>;
+};
+
+export type VendorService = {
+  list(filters: VendorSearchFilters, point?: Coordinates | null): Promise<VendorWithDistance[]>;
+  getById(id: string): Promise<Vendor | null>;
+  getProducts(vendorId: string): Promise<VendorProduct[]>;
+  recordEvent(vendorId: string, event: "view" | "contact"): Promise<{ views: number; contacts: number }>;
+};
+
+export interface VendorPortalService {
+  getShopProfile(vendorId: string): Promise<VendorShopProfile | null>;
+  updateShopProfile(vendorId: string, profile: VendorShopProfile): Promise<VendorShopProfile>;
+  listProducts(vendorId: string): Promise<VendorProduct[]>;
+  updateProduct(vendorId: string, product: VendorProductUpdate): Promise<VendorProduct>;
+  getStats(vendorId: string): Promise<VendorPortalStats>;
+}
