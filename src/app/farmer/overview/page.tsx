@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -41,7 +42,7 @@ export default function FarmerOverviewPage() {
   if (query.isLoading) {
     return (
       <main className="min-h-dvh bg-cream-50 p-6">
-        <State kind="loading" text="Loading your account…" />
+        <State kind="loading" text="Loading your account?" />
       </main>
     );
   }
@@ -49,10 +50,7 @@ export default function FarmerOverviewPage() {
   if (query.isError) {
     return (
       <main className="min-h-dvh bg-cream-50 p-6">
-        <LoadError
-          error={query.error}
-          onRetry={() => void query.refetch()}
-        />
+        <LoadError error={query.error} onRetry={() => void query.refetch()} />
       </main>
     );
   }
@@ -124,6 +122,30 @@ export default function FarmerOverviewPage() {
             </div>
           </dl>
         </Panel>
+
+        <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+          <Panel className="p-5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-stone-500">Agricultural support</p>
+            <h2 className="mt-2 text-xl font-semibold text-stone-900">Request an expert</h2>
+            <p className="mt-2 text-sm leading-relaxed text-stone-600">
+              Browse available agronomy and veterinary experts and submit a request for a visit or advisory.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link
+                href="/farmer/requests"
+                className="inline-flex items-center justify-center rounded-xl bg-forest-700 px-3.5 py-2.5 text-sm font-medium text-white transition hover:bg-forest-800"
+              >
+                View experts
+              </Link>
+            </div>
+          </Panel>
+          <Panel className="p-5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-stone-500">Need help now?</p>
+            <p className="mt-2 text-sm leading-relaxed text-stone-600">
+              Use the expert request form to describe your issue and pick a preferred visit date.
+            </p>
+          </Panel>
+        </section>
       </div>
     </main>
   );

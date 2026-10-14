@@ -16,6 +16,9 @@ const FARMER_PATHS = new Set([
   "/farmers/login",
   "/farmers/me",
   "/farmers/change-pin",
+  "/experts",
+  "/expert-request",
+  "/expert-request/status",
 ]);
 
 export function allowedBackendPath(segments: string[]): string | null {
