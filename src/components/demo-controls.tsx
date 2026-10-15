@@ -39,6 +39,7 @@ export function DemoControls({ role }: { role: UserRole }) {
     fastForwardDemoClock(10);
     queries.invalidateQueries({ queryKey: ["lifecycle-requests"] });
     queries.invalidateQueries({ queryKey: ["farmer"] });
+    queries.invalidateQueries({ queryKey: ["subscription"] });
     router.refresh();
   }
 
@@ -54,6 +55,7 @@ export function DemoControls({ role }: { role: UserRole }) {
     farmerProfileService.resetDemoProfile();
     setProfileReset(true);
     queries.invalidateQueries({ queryKey: ["farmer"] });
+    queries.invalidateQueries({ queryKey: ["subscription"] });
   }
 
   return (

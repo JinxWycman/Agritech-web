@@ -1,16 +1,10 @@
 import { getDataMode, getDemoScenario, getMockDelayMs } from "@/lib/data-mode";
-import { demoFarmerCounts } from "@/mocks/fixtures";
+import { notificationsService } from "@/services/notifications";
 import { readLifecycleRequests } from "@/lib/request-store";
 import { selectAdapter } from "@/services/selection";
 import type { FarmerAlertsService, FarmerRequestsService } from "@/services/contracts";
 
-async function demoCount(count: number): Promise<number> {
-  await new Promise((resolve) => setTimeout(resolve, getMockDelayMs()));
-  if (getDemoScenario() === "error") throw new Error("Demo service error scenario.");
-  return getDemoScenario() === "empty" ? 0 : count;
-}
-
-const mockAlerts: FarmerAlertsService = { getUnreadCount: () => demoCount(demoFarmerCounts.unreadAlerts) };
+const mockAlerts: FarmerAlertsService = { getUnreadCount: () => notificationsService.getUnreadCount() };
 const mockRequests: FarmerRequestsService = {
   async getOpenCount() {
     await new Promise((resolve) => setTimeout(resolve, getMockDelayMs()));

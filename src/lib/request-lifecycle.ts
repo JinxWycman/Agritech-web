@@ -30,6 +30,8 @@ export type ExpertRequestRecord = {
   offerExpiresAt: number | null;
   createdAt: number;
   updatedAt: number;
+  offeredAt?: number; // Proposed: offer timestamp for response metrics.
+  respondedAt?: number; // Proposed: expert response timestamp for response metrics.
   expertNotes: string[];
   declineReasons: string[];
   solved: boolean | null;
@@ -92,6 +94,8 @@ function offerTo(request: ExpertRequestRecord, expert: Expert, settings: Request
   return {
     ...request,
     status: "offered",
+    offeredAt: now,
+    respondedAt: undefined,
     assignedExpertId: expert.id,
     offeredExpertIds: request.offeredExpertIds.includes(expert.id) ? request.offeredExpertIds : [...request.offeredExpertIds, expert.id],
     offerExpiresAt: now + settings.offerTimeoutMinutes[request.urgency] * 60_000,
@@ -138,15 +142,15 @@ export function expireOffer(request: ExpertRequestRecord, experts: Expert[], set
 
 export function declineOffer(request: ExpertRequestRecord, expertId: string, reason: string, experts: Expert[], settings: RequestSettings, now: number): Result<ExpertRequestRecord> {
   if (request.status !== "offered" || request.assignedExpertId !== expertId) return { ok: false, error: "invalid_transition" };
-  if (request.offerExpiresAt !== null && request.offerExpiresAt <= now) return { ok: true, value: offerNext(request, experts, settings, now) };
-  const declined = { ...request, declineReasons: reason.trim() ? [...request.declineReasons, reason.trim()] : request.declineReasons };
-  return { ok: true, value: offerNext(declined, experts, settings, now) };
+  if (request.offerExpiresAt !== null && request.offerExpiresAt <= now) return { ok: true, value: { ...offerNext(request, experts, settings, now), respondedAt: now } };
+  const declined = { ...request, respondedAt: now, declineReasons: reason.trim() ? [...request.declineReasons, reason.trim()] : request.declineReasons };
+  return { ok: true, value: { ...offerNext(declined, experts, settings, now), respondedAt: now } };
 }
 
 export function acceptOffer(request: ExpertRequestRecord, expertId: string, now: number): Result<ExpertRequestRecord> {
   if (request.status !== "offered" || request.assignedExpertId !== expertId) return { ok: false, error: "invalid_transition" };
   if (request.offerExpiresAt !== null && request.offerExpiresAt <= now) return { ok: false, error: "offer_expired" };
-  return { ok: true, value: { ...request, status: "accepted", offerExpiresAt: null, updatedAt: now } };
+  return { ok: true, value: { ...request, status: "accepted", offerExpiresAt: null, respondedAt: now, updatedAt: now } };
 }
 
 export function completeRequest(request: ExpertRequestRecord, expertId: string, note: string, now: number): Result<ExpertRequestRecord> {

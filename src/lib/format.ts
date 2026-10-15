@@ -1,39 +1,42 @@
-/**
- * Money and dates the way Kenyan staff actually read them.
- * KSh = Kenyan shilling on receipts / M-Pesa. Times are East Africa Time.
- */
+export type Locale = string;
+const localeTag = (locale: Locale) => locale === "sw" ? "sw-KE" : "en-KE";
 
+export function formatKes(value: number, locale: Locale): string {
+  return new Intl.NumberFormat(localeTag(locale), { style: "currency", currency: "KES", maximumFractionDigits: 0 }).format(value);
+}
+
+export function formatDate(value: string | number | Date, locale: Locale, options: Intl.DateTimeFormatOptions = {}): string {
+  return new Intl.DateTimeFormat(localeTag(locale), { dateStyle: "medium", timeZone: "UTC", ...options }).format(new Date(value));
+}
+
+export function formatDateTime(value: string | number | Date, locale: Locale, options: Intl.DateTimeFormatOptions = {}): string {
+  return new Intl.DateTimeFormat(localeTag(locale), { dateStyle: "medium", timeStyle: "short", timeZone: "UTC", ...options }).format(new Date(value));
+}
+
+export function formatNumber(value: number, locale: Locale, options: Intl.NumberFormatOptions = {}): string {
+  return new Intl.NumberFormat(localeTag(locale), options).format(value);
+}
+
+// Legacy admin screens still consume these locale-default formatters.
 export function kes(value: number | string | null | undefined): string {
-  if (value === null || value === undefined || value === "") return "—";
-  const amount = typeof value === "number" ? value : Number(value);
-  if (Number.isNaN(amount)) return String(value);
-  return `KSh ${amount.toLocaleString("en-KE")}`;
+  const amount = typeof value === "string" ? Number(value) : value;
+  if (amount == null || !Number.isFinite(amount)) return "—";
+  return `KSh ${new Intl.NumberFormat("en-KE").format(amount)}`;
 }
 
 export function when(value: string | null | undefined): string {
   if (!value) return "—";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("en-KE", {
-    timeZone: "Africa/Nairobi",
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return Number.isNaN(date.getTime()) ? "—" : new Intl.DateTimeFormat("en-KE", { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
 export function humanize(value: string | null | undefined): string {
-  if (!value) return "—";
-  return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+  return value ? value.replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()) : "—";
 }
 
-export function statusTone(status: string | null | undefined): string {
-  const key = (status || "").toLowerCase();
-  if (["paid", "completed", "live", "yes", "available"].includes(key)) return "green";
-  if (["active"].includes(key)) return "green";
-  if (key === "accepted") return "blue";
-  if (["pending", "processing"].includes(key)) return "amber";
-  if (["failed", "cancelled", "expired", "inactive", "off", "no"].includes(key)) return "red";
-  return "zinc";
+export function statusTone(status: string | null | undefined) {
+  if (!status) return "zinc";
+  if (["paid", "active", "completed", "success"].includes(status.toLowerCase())) return "green";
+  if (["failed", "cancelled", "error"].includes(status.toLowerCase())) return "red";
+  return "amber";
 }

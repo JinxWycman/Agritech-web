@@ -11,10 +11,11 @@ import type { UserRole } from "@/types/domain";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { formatKenyaNational, toE164Kenya } from "@/lib/phone";
+import { pinSchema } from "@/lib/account-validation";
 
 const farmerSchema = z.object({
   phone: z.string().regex(/^\+254\d{9}$/),
-  pin: z.string().regex(/^\d{4,10}$/),
+  pin: pinSchema,
 });
 const staffSchema = z.object({
   phone: z.string().regex(/^\+254\d{9}$/),
