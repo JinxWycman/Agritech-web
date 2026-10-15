@@ -3,17 +3,13 @@
 import { useLocale, useTranslations } from "next-intl";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { MarketPrice } from "@/types/market";
+import { formatDate, formatKes } from "@/lib/format";
 
 export default function MarketPriceChart({ history }: { history: MarketPrice[] }) {
   const t = useTranslations("market");
   const locale = useLocale();
-  const currency = new Intl.NumberFormat(locale === "sw" ? "sw-KE" : "en-KE", {
-    style: "currency",
-    currency: "KES",
-    maximumFractionDigits: 0,
-  });
   const data = history.map((item) => ({
-    week: new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(item.observedAt)),
+week: formatDate(item.observedAt, locale, { month: "short", day: "numeric" }),
     price: item.pricePerUnit,
   }));
   return (
@@ -23,8 +19,8 @@ export default function MarketPriceChart({ history }: { history: MarketPrice[] }
           <LineChart data={data} margin={{ top: 12, right: 16, left: 8, bottom: 4 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
             <XAxis dataKey="week" tick={{ fill: "var(--muted)", fontSize: 12 }} />
-            <YAxis width={76} tickFormatter={(value: number) => currency.format(value)} tick={{ fill: "var(--muted)", fontSize: 11 }} />
-            <Tooltip formatter={(value) => currency.format(Number(value))} />
+            <YAxis width={76} tickFormatter={(value: number) => formatKes(Number(value), locale)} tick={{ fill: "var(--muted)", fontSize: 11 }} />
+            <Tooltip formatter={(value) => formatKes(Number(value), locale)} />
             <Line type="monotone" dataKey="price" name={t("pricePerUnit")} stroke="#166534" strokeWidth={3} dot={{ r: 3 }} />
           </LineChart>
         </ResponsiveContainer>

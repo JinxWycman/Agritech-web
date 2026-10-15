@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { EmptyState, ErrorState, LoadingState } from "@/components/portal-state";
 import { VendorMapLoader } from "@/components/vendor-map-loader";
 import { isOpenNow } from "@/lib/vendor-hours";
+import { formatKes } from "@/lib/format";
 import { toE164Kenya, toWhatsAppKenya } from "@/lib/phone";
 import type { Coordinates } from "@/lib/kenya-location";
 import { farmConditionsService, farmerProfileService, recommendationService, vendorService } from "@/services";
@@ -18,13 +19,7 @@ function localeOf(locale: string): Locale {
   return locale === "sw" ? "sw" : "en";
 }
 
-function money(amount: number, locale: Locale): string {
-  return new Intl.NumberFormat(locale === "sw" ? "sw-KE" : "en-KE", {
-    style: "currency",
-    currency: "KES",
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
+function money(amount: number, locale: Locale): string { return formatKes(amount, locale); }
 
 function ContactLinks({ vendor }: { vendor: Vendor }) {
   const labels = useTranslations("business");

@@ -13,6 +13,7 @@ import { demoMarketCrops } from "@/mocks/market-prices";
 import { pickLocalized } from "@/types/business";
 import type { MarketPrice } from "@/types/market";
 import { getDataMode } from "@/lib/data-mode";
+import { formatDate, formatKes, formatNumber } from "@/lib/format"
 
 const SELECTED_MARKET_KEY = "agritech_demo_selected_market";
 type Locale = "en" | "sw";
@@ -20,13 +21,7 @@ function selectedMarket(): string {
   if (typeof window === "undefined") return "";
   return window.localStorage.getItem(SELECTED_MARKET_KEY) ?? "";
 }
-function money(amount: number, locale: Locale): string {
-  return new Intl.NumberFormat(locale === "sw" ? "sw-KE" : "en-KE", {
-    style: "currency",
-    currency: "KES",
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
+function money(amount: number, locale: Locale): string { return formatKes(amount, locale); }
 
 export function MarketPricesScreen() {
   const t = useTranslations("market");
@@ -115,7 +110,7 @@ export function MarketPricesScreen() {
         <label className="block">
           <span className="mb-1 block font-medium">{t("marketSelector")}</span>
           <select value={selectedMarketValue?.id ?? ""} onChange={(event) => chooseMarket(event.target.value)} className="min-h-12 w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3">
-            {allSorted.map(({ market, distanceKm }) => <option key={market.id} value={market.id}>{pickLocalized(market.name, locale)} · {distanceKm.toFixed(1)} {t("km")}</option>)}
+            {allSorted.map(({ market, distanceKm }) => <option key={market.id} value={market.id}>{pickLocalized(market.name, locale)} · {formatNumber(distanceKm, locale, { maximumFractionDigits: 1, minimumFractionDigits: 1 })} {t("km")}</option>)}
           </select>
         </label>
       </section>
@@ -137,7 +132,7 @@ export function MarketPricesScreen() {
                 <table className="w-full min-w-[34rem] text-left text-sm">
                   <caption className="sr-only">{t("priceTableCaption", { crop: pickLocalized(crop.name, locale) })}</caption>
                   <thead className="bg-[var(--surface-muted)]"><tr><th scope="col" className="p-3">{t("marketColumn")}</th><th scope="col" className="p-3">{t("distanceColumn")}</th><th scope="col" className="p-3">{t("priceColumn")}</th><th scope="col" className="p-3">{t("observedColumn")}</th></tr></thead>
-                  <tbody>{marketPrices.map(({ market, distanceKm, price }) => <tr key={market.id} className="border-t border-[var(--border)]"><th scope="row" className="p-3 font-medium">{pickLocalized(market.name, locale)}</th><td className="p-3">{distanceKm.toFixed(1)} {t("km")}</td><td className="p-3">{price ? `${money(price.pricePerUnit, locale)} / ${pickLocalized(price.unit, locale)}` : t("priceUnavailable")}</td><td className="p-3">{price ? new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(new Date(price.observedAt)) : t("notAvailable")}</td></tr>)}</tbody>
+                  <tbody>{marketPrices.map(({ market, distanceKm, price }) => <tr key={market.id} className="border-t border-[var(--border)]"><th scope="row" className="p-3 font-medium">{pickLocalized(market.name, locale)}</th><td className="p-3">{formatNumber(distanceKm, locale, { maximumFractionDigits: 1, minimumFractionDigits: 1 })} {t("km")}</td><td className="p-3">{price ? `${money(price.pricePerUnit, locale)} / ${pickLocalized(price.unit, locale)}` : t("priceUnavailable")}</td><td className="p-3">{price ? formatDate(price.observedAt, locale) : t("notAvailable")}</td></tr>)}</tbody>
                 </table>
               </div>}
           </section>
@@ -153,7 +148,7 @@ export function MarketPricesScreen() {
                   <p className="text-sm text-[var(--muted)]">{t("chartAlternative")}</p>
                   <div className="overflow-x-auto rounded-xl border border-[var(--border)]">
                     <table className="w-full min-w-[24rem] text-left text-sm"><caption className="sr-only">{t("historyCaption")}</caption><thead className="bg-[var(--surface-muted)]"><tr><th scope="col" className="p-3">{t("weekColumn")}</th><th scope="col" className="p-3">{t("priceColumn")}</th></tr></thead>
-                      <tbody>{selectedHistory.map((point: MarketPrice) => <tr key={point.observedAt} className="border-t border-[var(--border)]"><th scope="row" className="p-3 font-medium">{new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(new Date(point.observedAt))}</th><td className="p-3">{money(point.pricePerUnit, locale)} / {pickLocalized(point.unit, locale)}</td></tr>)}</tbody>
+                      <tbody>{selectedHistory.map((point: MarketPrice) => <tr key={point.observedAt} className="border-t border-[var(--border)]"><th scope="row" className="p-3 font-medium">{formatDate(point.observedAt, locale)}</th><td className="p-3">{money(point.pricePerUnit, locale)} / {pickLocalized(point.unit, locale)}</td></tr>)}</tbody>
                     </table>
                   </div>
                 </div>}

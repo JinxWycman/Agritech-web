@@ -11,6 +11,7 @@ import { outbreakService, outbreakThresholdSchema, outbreakAlertDraftSchema } fr
 import { farmConditionsService, farmerProfileService } from "@/services";
 import { pickLocalized } from "@/types/business";
 import type { AlertDraft, OutbreakAlert, SignalCell, SignalFilters } from "@/types/outbreak";
+import { formatDate } from "@/lib/format";
 
 const symptoms = ["yellow-leaves", "spots-on-leaves", "pest-damage", "poor-growth", "not-eating", "coughing", "lameness"];
 const subjects = ["maize", "beans", "potatoes", "vegetables", "cattle", "goats", "poultry"];
@@ -23,7 +24,7 @@ function OutbreakAlertList({ alerts }: { alerts: OutbreakAlert[] }) {
   return <ul className="space-y-3">{alerts.map((alert) => <li key={alert.id} className="panel space-y-2 p-4">
     <p className="font-semibold">{pickLocalized(alert.message, locale)}</p>
     <p className="text-sm">{t(`symptom.${alert.symptomCode}`)} · {t(`issue.${alert.issueType}`)}{alert.subjectKey ? ` · ${t(`subject.${alert.subjectKey}`)}` : ""}</p>
-    <p className="text-sm">{t("alertRadius", { radius: alert.radiusKm })} · {new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(alert.createdAt))}</p>
+formatDate(alert.createdAt, locale)
     <p className="text-sm">{t("alertRecipients", { count: alert.recipientCount })}</p>
   </li>)}</ul>;
 }
@@ -211,7 +212,7 @@ export function AdminOutbreakScreen() {
         <h2 className="text-xl font-bold">{t("historyTitle")}</h2>
         {!alertList.length ? <EmptyState title={t("historyEmptyTitle")} text={t("historyEmptyText")} /> : <div className="overflow-x-auto rounded-xl border border-[var(--border)]">
           <table className="w-full min-w-[38rem] text-left text-sm"><caption className="sr-only">{t("historyTitle")}</caption><thead className="bg-[var(--surface-muted)]"><tr><th scope="col" className="p-3">{t("symptomColumn")}</th><th scope="col" className="p-3">{t("radiusColumn")}</th><th scope="col" className="p-3">{t("recipientColumn")}</th><th scope="col" className="p-3">{t("statusColumn")}</th><th scope="col" className="p-3">{t("dateColumn")}</th></tr></thead>
-            <tbody>{alertList.map((alert) => <tr key={alert.id} className="border-t border-[var(--border)]"><td className="p-3">{t(`symptom.${alert.symptomCode}`)}</td><td className="p-3">{alert.radiusKm} km</td><td className="p-3">{alert.recipientCount}</td><td className="p-3">{t(`status.${alert.status}`)} · {t("simulated")}</td><td className="p-3">{new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(alert.createdAt))}</td></tr>)}</tbody>
+            <tbody>{alertList.map((alert) => <tr key={alert.id} className="border-t border-[var(--border)]"><td className="p-3">{t(`symptom.${alert.symptomCode}`)}</td><td className="p-3">{alert.radiusKm} km</td><td className="p-3">{alert.recipientCount}</td><td className="p-3">{t(`status.${alert.status}`)} · {t("simulated")}</td><td className="p-3">{formatDate(alert.createdAt, locale)}</td></tr>)}</tbody>
           </table>
         </div>}
       </section>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { useOnline } from "@/lib/use-online";
 
 export function LoadingState() {
   const t = useTranslations("states");
@@ -26,10 +27,12 @@ export function EmptyState({ title, text }: { title?: string; text?: string }) {
 
 export function ErrorState({ onRetry, message }: { onRetry: () => void; message?: string }) {
   const t = useTranslations("states");
+  const online = useOnline();
+  const pwa = useTranslations("pwa");
   return (
     <section className="panel p-6" role="alert">
       <h2 className="font-semibold">{t("errorTitle")}</h2>
-      <p className="mt-2 text-sm text-[var(--muted)]">{message || t("errorText")}</p>
+      <p className="mt-2 text-sm text-[var(--muted)]">{message || (online ? t("errorText") : pwa("offlineError"))}</p>
       <button
         type="button"
         onClick={onRetry}

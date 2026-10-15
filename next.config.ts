@@ -21,6 +21,8 @@ const securityHeaders = [
       "img-src 'self' data: blob: https://*.tile.openstreetmap.org",
       "font-src 'self'",
       "connect-src 'self' ws: wss:",
+      "worker-src 'self'",
+      "manifest-src 'self'",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
@@ -37,9 +39,13 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/:path*",
-        headers: securityHeaders,
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache" },
+          { key: "Service-Worker-Allowed", value: "/" },
+        ],
       },
+      { source: "/:path*", headers: securityHeaders },
     ];
   },
 };

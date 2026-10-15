@@ -9,6 +9,7 @@ import { getDataMode } from "@/lib/data-mode";
 import { DemoControls } from "@/components/demo-controls";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { OfflineBanner } from "@/components/offline-banner";
 
 type Item = { key: string; suffix: string; phase: number };
 
@@ -23,6 +24,7 @@ const navigation: Record<UserRole, Item[]> = {
     { key: "requests", suffix: "/requests", phase: 1 },
     { key: "vendors", suffix: "/agrovets", phase: 4 },
     { key: "notifications", suffix: "/notifications", phase: 6 },
+    { key: "subscription", suffix: "/subscription", phase: 6 },
     { key: "settings", suffix: "/settings", phase: 7 },
   ],
   expert: [
@@ -48,7 +50,11 @@ const navigation: Record<UserRole, Item[]> = {
 };
 
 const roots: Record<UserRole, string> = { farmer: "/app", expert: "/expert", admin: "/admin" };
-const supportedDemoScreens = new Set(["/app/overview", "/app/profile", "/app/recommendations", "/app/livestock", "/app/agrovets", "/app/market-prices", "/app/risks", "/expert/overview", "/expert/requests", "/expert/availability", "/admin/overview", "/admin/requests", "/admin/outbreaks", "/app/requests", "/app/requests/new"]);
+const supportedDemoScreens = new Set(["/app/overview", "/app/profile", "/app/recommendations", "/app/livestock", "/app/agrovets", "/app/market-prices", "/app/risks", "/app/notifications", "/app/subscription", "/app/settings", "/expert/overview", "/expert/requests", "/expert/availability", "/expert/performance", "/admin/overview", "/admin/requests", "/admin/outbreaks", "/app/requests", "/app/requests/new"]);
+const legacyBuiltScreens = new Set(["/admin/farmers", "/admin/experts", "/admin/market-prices", "/admin/advisories", "/admin/products", "/admin/subscriptions", "/admin/pricing", "/admin/quotes", "/admin/sms-sessions", "/admin/audit"]);
+function isBuiltRoute(pathname: string): boolean {
+  return supportedDemoScreens.has(pathname) || legacyBuiltScreens.has(pathname) || /^\/app\/requests\/[^/]+$/.test(pathname) || /^\/app\/agrovets\/[^/]+$/.test(pathname) || /^\/admin\/farmers\/[^/]+$/.test(pathname);
+}
 
 export function portalRouteItem(role: UserRole, pathname: string) {
   return navigation[role].find((item) => `${roots[role]}${item.suffix}` === pathname);
@@ -62,7 +68,8 @@ export function PortalShell({ role, children }: { role: UserRole; children: Reac
   const mockMode = getDataMode() === "mock";
   const isFarmerRequestDetail = /^\/app\/requests\/[^/]+$/.test(pathname);
   const isVendorProfile = /^\/app\/agrovets\/[^/]+$/.test(pathname);
-  const unavailable = mockMode && !supportedDemoScreens.has(pathname) && !isFarmerRequestDetail && !isVendorProfile;
+  const isSupportedDemoRoute = supportedDemoScreens.has(pathname) || isFarmerRequestDetail || isVendorProfile;
+  const unavailable = mockMode && !isSupportedDemoRoute;
 
   async function signOut() {
     await authService.logout();
@@ -83,7 +90,7 @@ export function PortalShell({ role, children }: { role: UserRole; children: Reac
           <nav aria-label={t(`nav.${role}`)} className="flex-1 space-y-1 overflow-y-auto">
             {navigation[role].map((item) => {
               const href = `${roots[role]}${item.suffix}`;
-              const planned = item.phase > 1;
+              const planned = !isBuiltRoute(href);
               return (
                 <Link
                   key={item.key}
@@ -118,10 +125,11 @@ export function PortalShell({ role, children }: { role: UserRole; children: Reac
             <nav aria-label={t(`nav.${role}`)} className="nav-scroll mt-3 flex gap-2 overflow-x-auto md:hidden">
               {navigation[role].map((item) => {
                 const href = `${roots[role]}${item.suffix}`;
-                return <Link key={item.key} href={href} className="whitespace-nowrap rounded-full border border-[var(--border)] px-3 py-2 text-xs">{t(`nav.${item.key}`)}{item.phase > 1 ? ` · ${t("common.planned", { phase: item.phase })}` : ""}</Link>;
+                return <Link key={item.key} href={href} className="whitespace-nowrap rounded-full border border-[var(--border)] px-3 py-2 text-xs">{t(`nav.${item.key}`)}{!isBuiltRoute(href) ? ` · ${t("common.planned", { phase: item.phase })}` : ""}</Link>;
               })}
             </nav>
           </header>
+          <OfflineBanner />
           <main id="main" className="mx-auto max-w-6xl space-y-5 p-4 sm:p-6">
             {mockMode && <DemoControls role={role} />}
             {unavailable
