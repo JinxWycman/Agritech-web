@@ -48,7 +48,7 @@ const navigation: Record<UserRole, Item[]> = {
 };
 
 const roots: Record<UserRole, string> = { farmer: "/app", expert: "/expert", admin: "/admin" };
-const supportedDemoScreens = new Set(["/app/overview", "/app/profile", "/app/recommendations", "/app/livestock", "/app/agrovets", "/expert/overview", "/expert/requests", "/expert/availability", "/admin/overview", "/admin/requests", "/app/requests", "/app/requests/new"]);
+const supportedDemoScreens = new Set(["/app/overview", "/app/profile", "/app/recommendations", "/app/livestock", "/app/agrovets", "/app/market-prices", "/app/risks", "/expert/overview", "/expert/requests", "/expert/availability", "/admin/overview", "/admin/requests", "/admin/outbreaks", "/app/requests", "/app/requests/new"]);
 
 export function portalRouteItem(role: UserRole, pathname: string) {
   return navigation[role].find((item) => `${roots[role]}${item.suffix}` === pathname);

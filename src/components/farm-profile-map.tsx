@@ -1,11 +1,14 @@
 "use client";
 
-import { useMemo } from "react";
-import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
+import { useMemo, useState } from "react";
+import { MapContainer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import type { Coordinates } from "@/lib/kenya-location";
 import { KENYA_BOUNDS, clampToKenya } from "@/lib/kenya-location";
-import "leaflet/dist/leaflet.css";
+import { MapResizeHandler } from "@/components/map-resize-handler";
+import { OsmTileLayer } from "@/components/osm-tile-layer";
+import { useTranslations } from "next-intl";
+
 
 type Props = {
   position: Coordinates | null;
@@ -24,6 +27,8 @@ function MapClick({ onChange }: Pick<Props, "onChange">) {
 }
 
 export default function FarmProfileMap({ position, onChange, label, readOnly = false }: Props) {
+  const [tileError, setTileError] = useState(false);
+  const t = useTranslations("outbreak");
   const bounds = useMemo(
     () => L.latLngBounds([KENYA_BOUNDS.south, KENYA_BOUNDS.west], [KENYA_BOUNDS.north, KENYA_BOUNDS.east]),
     [],
@@ -40,20 +45,18 @@ export default function FarmProfileMap({ position, onChange, label, readOnly = f
   );
 
   return (
-    <div className="overflow-hidden rounded-xl border border-[var(--border)]">
+    <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-gray-200">
       <MapContainer
         center={position ? [position.latitude, position.longitude] : [-0.3, 37.8]}
         zoom={6}
         minZoom={5}
         maxBounds={bounds}
         maxBoundsViscosity={1}
-        className="h-72 w-full sm:h-96"
+        className="h-72 w-full bg-gray-200 sm:h-96"
         scrollWheelZoom={false}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <MapResizeHandler />
+        <OsmTileLayer onTileError={() => setTileError(true)} />
         {!readOnly && <MapClick onChange={onChange} />}
         {kenyaPosition && (
           <Marker
@@ -70,6 +73,7 @@ export default function FarmProfileMap({ position, onChange, label, readOnly = f
           />
         )}
       </MapContainer>
+      {tileError && <p role="status" className="bg-gray-200 px-3 py-2 text-sm text-gray-900">{t("mapTilesError")}</p>}
     </div>
   );
 }

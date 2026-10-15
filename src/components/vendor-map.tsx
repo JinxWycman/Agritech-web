@@ -1,13 +1,16 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import { MapContainer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import { KENYA_BOUNDS } from "@/lib/kenya-location";
+import { MapResizeHandler } from "@/components/map-resize-handler";
+import { OsmTileLayer } from "@/components/osm-tile-layer";
+import { useTranslations } from "next-intl";
 import { pickLocalized, type VendorWithDistance } from "@/types/business";
 import type { Coordinates } from "@/lib/kenya-location";
-import "leaflet/dist/leaflet.css";
+
 
 export default function VendorMap({
   farm,
@@ -20,6 +23,8 @@ export default function VendorMap({
   locale: "en" | "sw";
   farmLabel: string;
 }) {
+  const [tileError, setTileError] = useState(false);
+  const t = useTranslations("outbreak");
   const bounds = useMemo(
     () => L.latLngBounds([KENYA_BOUNDS.south, KENYA_BOUNDS.west], [KENYA_BOUNDS.north, KENYA_BOUNDS.east]),
     [],
@@ -38,20 +43,18 @@ export default function VendorMap({
   }), []);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-[var(--border)]">
+    <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-gray-200">
       <MapContainer
         center={farm ? [farm.latitude, farm.longitude] : [-0.3, 37.8]}
         zoom={farm ? 7 : 6}
         minZoom={5}
         maxBounds={bounds}
         maxBoundsViscosity={1}
-        className="h-72 w-full sm:h-96"
+        className="h-72 w-full bg-gray-200 sm:h-96"
         scrollWheelZoom={false}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <MapResizeHandler />
+        <OsmTileLayer onTileError={() => setTileError(true)} />
         {farm && <Marker position={[farm.latitude, farm.longitude]} icon={farmIcon} title={farmLabel}><Popup>{farmLabel}</Popup></Marker>}
         {vendors.map((vendor) => {
           const label = pickLocalized(vendor.name, locale);
@@ -65,6 +68,8 @@ export default function VendorMap({
           );
         })}
       </MapContainer>
+      {tileError && <p role="status" className="bg-gray-200 px-3 py-2 text-sm text-gray-900">{t("mapTilesError")}</p>}
+      
     </div>
   );
 }

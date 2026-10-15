@@ -13,7 +13,7 @@ import { clampToKenya, countyFromCoordinates, isWithinKenya } from "@/lib/kenya-
 import { getDataMode } from "@/lib/data-mode";
 import type { Coordinates } from "@/lib/kenya-location";
 
-const cropOptions = ["Maize", "Beans", "Potatoes", "Vegetables"];
+const cropOptions = ["Maize", "Beans", "Potatoes", "Vegetables", "Sorghum"];
 const livestockOptions = ["Cattle", "Goats", "Sheep", "Poultry"];
 type FarmerProfileFormInput = {
   farmSizeAcres: string;

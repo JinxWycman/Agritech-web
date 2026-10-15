@@ -5,6 +5,8 @@ import { mockAuthService, mockAdminSummaryService, mockExpertRequestService, moc
 import { farmerProfileService } from "@/services/farmer-profile";
 import { farmConditionsService } from "@/services/farm-conditions";
 import { farmerAlertsService, farmerRequestsService } from "@/services/farmer-counts";
+import { marketPriceService } from "@/services/market-prices";
+import { outbreakService } from "@/services/outbreaks";
 
 const mode = getDataMode();
 
@@ -13,13 +15,14 @@ export const farmerService = selectAdapter(mode, mockFarmerService, apiFarmerSer
 export const expertRequestService = selectAdapter(mode, mockExpertRequestService, apiExpertRequestService);
 export const expertsService = selectAdapter(mode, mockExpertsService, apiExpertsService);
 export const adminSummaryService = selectAdapter(mode, mockAdminSummaryService, apiAdminSummaryService);
-export { farmerProfileService, farmConditionsService, farmerAlertsService, farmerRequestsService };
+export { farmerProfileService, farmConditionsService, farmerAlertsService, farmerRequestsService, outbreakService };
 export const lifecycleExpertRequestService = selectAdapter(mode, mockLifecycleExpertRequestService, apiLifecycleExpertRequestService);
 export const lifecycleExpertsService = selectAdapter(mode, mockLifecycleExpertsService, apiLifecycleExpertsService);
 export const symptomsService = selectAdapter(mode, mockSymptomsService, apiSymptomsService);
 export const requestSettingsService = selectAdapter(mode, mockRequestSettingsService, apiRequestSettingsService);
 export const recommendationService = selectAdapter(mode, mockRecommendationService, apiRecommendationService);
 export const vendorService = selectAdapter(mode, mockVendorService, apiVendorService);
+export { marketPriceService };
 
 export function notImplemented(resource: string): never {
   throw new Error(`${resource} API adapter is not implemented until its backend contract is confirmed.`);
