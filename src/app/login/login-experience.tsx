@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { z } from "zod";
 import { authService } from "@/services/auth";
-import { getDataMode } from "@/lib/data-mode";
+import { getDataMode, isDemoAllowed } from "@/lib/data-mode";
 import { safeNextPath, staffHome } from "@/lib/http";
 import type { UserRole } from "@/types/domain";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -33,6 +33,7 @@ export function LoginExperience() {
   const router = useRouter();
   const search = useSearchParams();
   const mockMode = getDataMode() === "mock";
+  const demoMode = mockMode && isDemoAllowed();
   const [accountType, setAccountType] = useState<"farmer" | "staff">("farmer");
   const [phone, setPhone] = useState("");
   const [secret, setSecret] = useState("");
@@ -40,6 +41,7 @@ export function LoginExperience() {
   const [busy, setBusy] = useState(false);
 
   async function demoLogin(role: UserRole) {
+    if (!demoMode) return;
     await authService.continueAs(role);
     document.cookie = `demo_role=${role}; Path=/; SameSite=Lax`;
     router.replace(safeNextPath(search.get("next"), role) || rolePaths[role]);
@@ -64,26 +66,27 @@ export function LoginExperience() {
         : await authService.loginStaff(normalizedPhone, secret);
       router.replace(safeNextPath(search.get("next"), result.role) || staffHome(result.role) || rolePaths[result.role]);
       router.refresh();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t("login.signInError"));
+    } catch {
+      setError(t("login.signInError"));
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <main className="min-h-dvh bg-[var(--background)] px-4 py-6 text-[var(--foreground)] sm:px-8">
+    <main id="main" tabIndex={-1} className="min-h-dvh bg-[var(--background)] px-4 py-6 text-[var(--foreground)] sm:px-8">
+      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-[var(--surface)] focus:p-3">{t("common.skipToMain")}</a>
       <div className="mx-auto flex max-w-5xl justify-end gap-4">
         <LanguageSwitcher />
         <ThemeToggle />
       </div>
       <div className="mx-auto grid min-h-[80dvh] max-w-5xl place-items-center">
         <section className="panel w-full max-w-xl p-6 sm:p-9">
-          <p className="text-xs font-semibold uppercase tracking-[.16em] text-forest-700">{t("common.appName")}</p>
+          <p className="text-xs font-semibold uppercase tracking-[.16em] text-[var(--accent-foreground)]">{t("common.appName")}</p>
           <h1 className="mt-3 text-3xl font-bold">{t("login.title")}</h1>
           <p className="mt-2 text-[var(--muted)]">{t("login.subtitle")}</p>
 
-          {mockMode ? (
+          {demoMode ? (
             <div className="mt-7 space-y-3">
               <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-950">{t("common.demoData")}</span>
               <h2 className="font-semibold">{t("login.demoTitle")}</h2>

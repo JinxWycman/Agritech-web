@@ -16,6 +16,12 @@ const en = {
     dark: "Dark",
     system: "System",
     signOut: "Sign out",
+    environmentNotConfiguredTitle: "This environment is not configured",
+    environmentNotConfiguredText: "Set the production data mode and required API configuration, or explicitly enable the public demo.",
+    liveNotConnected: "This feature is not connected to the live service yet",
+    liveNotConnectedText: "This screen is not available with the current live-service connection.",
+    backHome: "Back to portal home",
+    skipToMain: "Skip to main content",
     languageReview: "Kiswahili translations need review by a native speaker.",
   },
   login: {

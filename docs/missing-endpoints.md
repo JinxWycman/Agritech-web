@@ -4,7 +4,7 @@ The specification confirms product capabilities and selected business rules, not
 
 ## A. Decisions before connecting
 
-1. Authentication path: specification `POST /auth` or legacy `POST /auth/login`; confirm payload and response.
+1. Authentication paths to confirm: current farmer login calls `POST /auth/login` with `{ phone_number, pin }`; current staff login calls `POST /staff/login` with `{ phone_number, password }`. Confirm these legacy paths, payloads, response schemas, and whether the spec's `POST /auth` is intended instead.
 2. Token transport, storage boundary, refresh rotation, expiry, logout, and cookie flags.
 3. Backend role names and permissions. Frontend maps `officer` to `expert` and `platform_admin` to `admin` in `src/services/adapters/api.ts`; confirm both source roles and mapping.
 4. Same-origin proxy versus direct API/CORS; confirm deployment and `NEXT_PUBLIC_API_BASE_URL` expectations.

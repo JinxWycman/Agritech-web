@@ -16,6 +16,12 @@ const sw = {
     dark: "Giza",
     system: "Mfumo",
     signOut: "Toka",
+    environmentNotConfiguredTitle: "Mazingira haya hayajasanidiwa",
+    environmentNotConfiguredText: "Weka hali ya data ya uzalishaji na usanidi wa API unaohitajika, au ruhusu onyesho la umma waziwazi.",
+    liveNotConnected: "Kipengele hiki bado hakijaunganishwa na huduma ya moja kwa moja",
+    liveNotConnectedText: "Ukurasa huu haupatikani kupitia muunganisho wa sasa wa huduma ya moja kwa moja.",
+    backHome: "Rudi mwanzo wa tovuti",
+    skipToMain: "Ruka hadi kwenye maudhui makuu",
     languageReview: "Tafsiri hii ya Kiswahili inahitaji kukaguliwa na mzungumzaji wa asili.",
   },
   login: {

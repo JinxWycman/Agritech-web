@@ -13,7 +13,7 @@
 | 6b. Farmer and expert screens | Done |
 | 6c. Legacy admin mock services | Deferred by owner |
 | 7a. Translation, PWA and offline polish | Done |
-| 7b. Browser tests and final accessibility | Not started |
+| 7b. Production safety, browser tests and accessibility | Done (full-suite rerun pending) |
 
 ## Run and review
 
@@ -164,13 +164,48 @@ Statuses: **built** = mock-first and works in demo mode; **legacy** = older back
 - Validation: lint passed; 54 Vitest + 15 Node tests passed; production build passed including integrated type validation. The final standalone `npm run typecheck` attempt occurred before the two manifest/chart fixes and failed; no fourth standalone run was made under the three-run limit.
 - Remaining hardcoded English is limited to existing API/legacy surfaces such as `request-board.tsx` and the unused legacy `shell.tsx`; language names in the locale picker are intentional.
 
+### Phase 7b — production safety, browser tests and accessibility
+
+- Production fails closed unless `NEXT_PUBLIC_DATA_MODE` is valid; API mode also requires an API base URL. Demo picker, controls, scenarios, indicator, and cookie are limited to allowed mock mode. API errors do not fall back to mock fixtures.
+- API-mode login retains the existing farmer `POST /auth/login` and staff `POST /staff/login` paths; both are recorded as unconfirmed in section A of `docs/missing-endpoints.md`. The proxy accepts server-side `API_URL` as an override for `NEXT_PUBLIC_API_BASE_URL`.
+- API-connected portal routes are `/admin/farmers/:id`, `/admin/experts`, `/admin/market-prices`, `/admin/advisories`, `/admin/products`, `/admin/subscriptions`, `/admin/pricing`, `/admin/quotes`, `/admin/sms-sessions`, `/admin/audit`, `/admin/overview`, `/admin/requests`, `/expert/overview`, and `/expert/requests`. Other API-mode portal routes show a localized not-connected page.
+- Playwright inventory: farmer request/expert acceptance lifecycle; map/CSP regression; admin outbreak alert; locale persistence; demo error/empty states; route guards; manifest/service-worker/offline behavior; skip-link keyboard flow; and axe scans. Run `npm run test:e2e`; the production server uses port 3100 and `.next-e2e`. Desktop runs the suite; mobile (360×740) runs farmer lifecycle and accessibility.
+- Axe scanned all requested farmer, expert, admin, and login routes with WCAG 2.0/2.1 A/AA tags, excluding `.leaflet-container`. Desktop and mobile scans passed with 0 critical, 0 serious, 0 moderate, and 0 minor findings after the dark-theme contrast corrections.
+- E2E verification note: the initial full run exposed dark-theme contrast violations. The desktop and mobile accessibility specs were rerun and passed after fixes; the complete suite was not rerun after those fixes. No `test.fixme` cases are recorded.
+- Final checks: `npm run typecheck` and `npm run lint` passed; `npm test` passed (57 Vitest and 15 Node tests). Production builds started by the E2E web server completed successfully. Full E2E remains unverified after the contrast fixes.
+
+## Production configuration
+
+- Production API deployment requires `NEXT_PUBLIC_DATA_MODE=api` and `NEXT_PUBLIC_API_BASE_URL`. The Next.js backend proxy also reads server-side `API_URL` as an optional upstream override. Do not put credentials or secrets in `NEXT_PUBLIC_*` variables.
+- The app fails closed with a localized configuration message when the production data mode is unset/invalid, or when API mode has no upstream URL. Mock mode is allowed in production only with `NEXT_PUBLIC_DEMO_ENABLED=true`; use `NEXT_PUBLIC_DATA_MODE=mock NEXT_PUBLIC_DEMO_ENABLED=true` for an explicitly public demo deployment.
+- Demo controls and demo persona/cookie behavior are available only in allowed mock mode. API mode ignores demo identity and shows the not-connected page for routes outside the API-connected list above.
+- Live integration remains blocked on the unconfirmed resource contracts in section F of `docs/missing-endpoints.md`; see section A there for login paths that still need confirmation.
+
+## Release status
+
+**Frontend-ready, deployment/integration blocked**
+
+- Verified: the production safety guards, proxy configuration check, login-mode behavior, and connected-route boundary are implemented; desktop and mobile accessibility scans passed with zero reported violations; the two targeted post-fix axe runs passed.
+- Not verified as a full release: the complete Playwright suite was not rerun after fixing the initial contrast findings. Confirm full E2E status before deployment.
+- Backend-owner actions: confirm the farmer and staff login contracts and the resource contracts listed in section F of `docs/missing-endpoints.md`; provide a reachable production API URL and validate the proxy/upstream setup.
+- Other blockers: raster 192/512 and maskable PNG icons are still needed; production requires a real tile provider or self-hosted tiles; Kiswahili needs native-speaker review; sample catalogue and risk rules need agronomist review; `npm audit` has remaining advisories (including PostCSS requiring a major Next upgrade and dev-only toolchain advisories; no forced major upgrades were made).
+
+## Release checklist
+
+- [x] Production fails closed when required configuration is missing; explicit demo deployment is gated.
+- [x] Demo features are unavailable in API mode; API-mode unconnected routes are clearly identified.
+- [x] Desktop and mobile axe scans pass; no serious or critical findings.
+- [ ] Rerun the complete Playwright suite after the contrast fixes and confirm all critical flows.
+- [ ] Confirm API and authentication contracts with the backend owner and validate a deployment.
+- [ ] Add raster PWA icons and configure a production tile provider.
+- [ ] Complete native Kiswahili and agronomist reviews; review remaining npm advisories.
+
 ## Backlog and next steps
 
 - Phase 6c is deferred by the owner: legacy admin pages still work in api mode; mock versions are parked in the backlog.
-- Next: Phase 7b — browser tests and final accessibility review.
-- Backlog: admin market directory management; admin vendor management console; validated agronomic risk rules; server-backed notifications/payment/preferences/PIN and expert performance/coverage contracts.
-- Backlog: outbreak SMS gateway/delivery status and recipient/read-state APIs; Playwright and PWA work in Phase 7.
+- Next: live backend integration is a separate later phase; Phase 7b is complete.
+- Backlog: Phase 6c mock admin screens; vendor portal UI; admin markets CRUD; a real heatmap; live backend integration per section F of `docs/missing-endpoints.md`; server-backed notifications, payment, preferences/PIN, expert performance/coverage, outbreak SMS delivery, recipients, and read-state contracts.
+- Backlog: rerun the full Playwright suite after the contrast fixes. There are currently no `test.fixme` items.
 
 - Kiswahili translations need native-speaker review; agronomy copy also needs expert review.
 - Review existing npm audit advisories separately; do not change dependencies without need.
-- Phase 7: Playwright coverage, PWA/service worker, offline behavior, and full accessibility audit.

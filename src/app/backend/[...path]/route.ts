@@ -9,10 +9,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 20;
 
-const UPSTREAM = (process.env.API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000").replace(
-  /\/$/,
-  "",
-);
+const configuredUpstream = process.env.API_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
+const UPSTREAM = (configuredUpstream || "http://127.0.0.1:8000").replace(/\/$/, "");
 
 const HOP = new Set([
   "connection",
@@ -31,6 +29,10 @@ const HOP = new Set([
 type RouteContext = { params: Promise<{ path: string[] }> };
 
 async function proxy(request: NextRequest, context: RouteContext) {
+  if (process.env.NODE_ENV === "production" && !configuredUpstream) {
+    return NextResponse.json({ detail: "Backend URL is not configured." }, { status: 503 });
+  }
+
   const { path: segments } = await context.params;
   const allowed = allowedBackendPath(segments);
   if (!allowed) {

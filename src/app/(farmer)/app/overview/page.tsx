@@ -60,7 +60,7 @@ export default function FarmerOverviewPage() {
         : profileQuery.isLoading
           ? <LoadingState />
           : profileQuery.data?.profile_complete !== true && (
-            <section className="panel border-forest-500/40 bg-forest-50 p-5">
+            <section className="panel border-forest-500/40 bg-[var(--positive-background)] p-5 text-[var(--positive-foreground)]">
               <h2 className="text-lg font-semibold">{t("farmDashboard.finishProfile")}</h2>
               <p className="mt-1 text-sm">{t("farmDashboard.finishProfileText")}</p>
               <Link href="/app/profile" className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-forest-700 px-4 font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest-600">

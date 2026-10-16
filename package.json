@@ -6,9 +6,10 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint src next.config.ts vitest.config.ts",
+    "lint": "eslint src tests/e2e next.config.ts vitest.config.ts playwright.config.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run && node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/lib/http.test.ts src/lib/backend-allow.test.ts src/lib/phone.test.ts"
+    "test": "vitest run && node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/lib/http.test.ts src/lib/backend-allow.test.ts src/lib/phone.test.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -25,7 +26,9 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.64.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
