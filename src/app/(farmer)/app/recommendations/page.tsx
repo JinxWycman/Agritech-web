@@ -1,4 +1,4 @@
-import { RecommendationScreen } from "@/components/business-screens";
+import { RecommendationScreen } from "@/features/farmers/components";
 
 export default function CropRecommendationsPage() {
   return <RecommendationScreen kind="crop" />;

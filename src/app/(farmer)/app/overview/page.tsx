@@ -13,7 +13,7 @@ import type { FarmConditionsSnapshot } from "@/types/domain";
 import { demoDefaultFarmLocation } from "@/mocks/fixtures";
 
 const FarmHealthChart = dynamic(
-  () => import("@/components/farm-health-chart").then((module) => module.FarmHealthChart),
+  () => import("@/features/farmers/components").then((module) => module.FarmHealthChart),
   { ssr: false, loading: () => <div className="mt-4 h-52 animate-pulse rounded-xl bg-[var(--surface-muted)]" aria-hidden="true" /> },
 );
 

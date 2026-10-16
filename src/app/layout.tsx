@@ -33,7 +33,7 @@ export default async function RootLayout({
     nodeEnv: process.env.NODE_ENV,
     dataMode: process.env.NEXT_PUBLIC_DATA_MODE,
     demoEnabled: process.env.NEXT_PUBLIC_DEMO_ENABLED,
-    apiBaseUrl: process.env.API_URL || process.env.NEXT_PUBLIC_API_BASE_URL,
+    apiBaseUrl: process.env.API_URL,
   });
   return (
     <html lang={locale === "sw" ? "sw-KE" : "en-KE"} suppressHydrationWarning>

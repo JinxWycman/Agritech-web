@@ -2,7 +2,7 @@
  * How the browser talks to FastAPI.
  *
  * Pages call api("/admin/overview") ? never the Render URL directly.
- * Next.js forwards /backend/... to NEXT_PUBLIC_API_BASE_URL. The API still checks the JWT.
+ * Next.js forwards /backend/... to the server-only API_URL. The API checks the JWT.
  * Access token stays in memory. Refresh token stays in an HttpOnly cookie.
  */
 import { ApiError, OFFLINE_MESSAGE, formatApiDetail, httpRequest, isStaffRole, safeNextPath } from "@/lib/http";

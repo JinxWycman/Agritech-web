@@ -1,4 +1,4 @@
-import { VendorProfileScreen } from "@/components/business-screens";
+import { VendorProfileScreen } from "@/features/farmers/components";
 
 export default function VendorProfilePage() {
   return <VendorProfileScreen />;

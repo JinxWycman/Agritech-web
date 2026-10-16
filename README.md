@@ -19,11 +19,11 @@ Open `http://localhost:3000` and choose a demo Farmer, Expert, or Admin persona 
 
 ```env
 NEXT_PUBLIC_DATA_MODE=mock
-NEXT_PUBLIC_API_BASE_URL=https://YOUR-API-HOST
+API_URL=https://YOUR-API-HOST
 NEXT_PUBLIC_MOCK_DELAY_MS=80
 ```
 
-`NEXT_PUBLIC_DATA_MODE` accepts `mock` or `api`; the API URL has no trailing slash. Never put secrets in frontend environment variables. Unconfirmed API adapters explicitly remain not implemented. Production configuration and the connected API routes are documented in [docs/HANDOFF.md](./docs/HANDOFF.md).
+`NEXT_PUBLIC_DATA_MODE` accepts `mock` or `api`. `API_URL` is server-only, has no trailing slash, and is used by the same-origin `/backend` proxy; do not add it to a `NEXT_PUBLIC_*` variable. Never put secrets in frontend environment variables. Unconfirmed API adapters explicitly remain not implemented. Production configuration and the connected API routes are documented in [docs/HANDOFF.md](./docs/HANDOFF.md).
 
 ## Checks
 

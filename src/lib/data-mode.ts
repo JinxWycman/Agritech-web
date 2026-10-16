@@ -27,7 +27,7 @@ export function getDataMode(): DataMode {
 }
 
 export function getApiBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_BASE_URL || "";
+  return process.env.API_URL || "";
 }
 
 export function getDemoScenario(): DemoScenario {
