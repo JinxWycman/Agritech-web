@@ -11,7 +11,9 @@ export const maxDuration = 20;
 
 // Keep the backend hostname server-side. Browser requests stay same-origin at
 // /backend, so browser-to-API CORS is not needed.
-const configuredUpstream = process.env.API_URL?.trim();
+// Keep compatibility with deployments that still use the previous variable.
+// API_URL is preferred and remains server-only; the fallback is only read here.
+const configuredUpstream = (process.env.API_URL || process.env.NEXT_PUBLIC_API_BASE_URL)?.trim();
 const UPSTREAM = (configuredUpstream || "http://127.0.0.1:8000").replace(/\/$/, "");
 
 const HOP = new Set([
