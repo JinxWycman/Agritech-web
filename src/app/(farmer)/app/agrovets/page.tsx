@@ -1,4 +1,4 @@
-import { VendorDirectoryScreen } from "@/components/business-screens";
+import { VendorDirectoryScreen } from "@/features/farmers/components";
 
 export default function AgrovetsPage() {
   return <VendorDirectoryScreen />;

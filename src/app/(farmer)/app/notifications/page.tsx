@@ -1,4 +1,4 @@
-import { NotificationsScreen } from "@/components/account-screens";
+import { NotificationsScreen } from "@/features/farmers/components";
 
 export default function NotificationsPage() {
   return <NotificationsScreen />;

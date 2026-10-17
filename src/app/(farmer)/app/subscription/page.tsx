@@ -1,4 +1,4 @@
-import { SubscriptionScreen } from "@/components/account-screens";
+import { SubscriptionScreen } from "@/features/farmers/components";
 
 export default function SubscriptionPage() {
   return <SubscriptionScreen />;

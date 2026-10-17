@@ -7,7 +7,7 @@ The specification confirms product capabilities and selected business rules, not
 1. Authentication paths to confirm: current farmer login calls `POST /auth/login` with `{ phone_number, pin }`; current staff login calls `POST /staff/login` with `{ phone_number, password }`. Confirm these legacy paths, payloads, response schemas, and whether the spec's `POST /auth` is intended instead.
 2. Token transport, storage boundary, refresh rotation, expiry, logout, and cookie flags.
 3. Backend role names and permissions. Frontend maps `officer` to `expert` and `platform_admin` to `admin` in `src/services/adapters/api.ts`; confirm both source roles and mapping.
-4. Same-origin proxy versus direct API/CORS; confirm deployment and `NEXT_PUBLIC_API_BASE_URL` expectations.
+4. This website uses a same-origin Next.js `/backend` proxy configured with server-only `API_URL`. Browser CORS is avoided. If a client calls FastAPI directly, configure the backend's `CORS_ORIGINS` environment variable with that client's exact origin; do not use `*` with credentials.
 5. Standard error envelope, validation-error format, and retry/rate-limit semantics.
 6. Pagination/filter/sort conventions and maximum page sizes.
 7. Identifier formats and uniqueness scope; timestamp format/time zone; Kenyan phone format and normalization.

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { allowedBackendPath, rewriteSetCookie, stripRefreshFromStaffPayload } from "./backend-allow.ts";
+import { allowedBackendMethod, allowedBackendPath, rewriteSetCookie, stripRefreshFromStaffPayload } from "./backend-allow.ts";
 
 describe("allowedBackendPath", () => {
   it("allows staff, farmer, and admin routes on the verified contract", () => {
@@ -14,6 +14,8 @@ describe("allowedBackendPath", () => {
     assert.equal(allowedBackendPath(["farmers", "change-pin"]), "/farmers/change-pin");
     assert.equal(allowedBackendPath(["admin", "overview"]), "/admin/overview");
     assert.equal(allowedBackendPath(["admin", "farmers", "a-id"]), "/admin/farmers/a-id");
+    assert.equal(allowedBackendPath(["counties", "123e4567-e89b-12d3-a456-426614174000", "constituencies"]), "/counties/123e4567-e89b-12d3-a456-426614174000/constituencies");
+    assert.equal(allowedBackendPath(["recommendations", "123e4567-e89b-12d3-a456-426614174001", "sms"]), "/recommendations/123e4567-e89b-12d3-a456-426614174001/sms");
   });
 
   it("blocks open-proxy and traversal paths", () => {
@@ -23,6 +25,16 @@ describe("allowedBackendPath", () => {
     assert.equal(allowedBackendPath(["staff", "..", "ussd"]), null);
     assert.equal(allowedBackendPath(["admin"]), null);
     assert.equal(allowedBackendPath([]), null);
+  });
+});
+
+describe("allowedBackendMethod", () => {
+  it("allows only expected methods for farmer resources", () => {
+    assert.equal(allowedBackendMethod("PUT", "/farmers/me"), true);
+    assert.equal(allowedBackendMethod("DELETE", "/farmer-crops/123e4567-e89b-12d3-a456-426614174000"), true);
+    assert.equal(allowedBackendMethod("POST", "/recommendations/generate"), true);
+    assert.equal(allowedBackendMethod("POST", "/counties"), false);
+    assert.equal(allowedBackendMethod("POST", "/auth/me"), false);
   });
 });
 

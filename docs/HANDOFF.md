@@ -19,7 +19,7 @@
 
 - Install dependencies with `npm install`.
 - Commands: `npm run dev`, `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`.
-- Data mode defaults to mock. Set `NEXT_PUBLIC_DATA_MODE=mock` for demo data or `api` to use only confirmed/legacy adapter calls. `NEXT_PUBLIC_API_BASE_URL` configures the API base URL; never put secrets in frontend env vars.
+- Data mode defaults to mock. Set `NEXT_PUBLIC_DATA_MODE=mock` for demo data or `api` to use confirmed/legacy adapter calls. Set server-only `API_URL` to the backend origin; the browser calls the same-origin `/backend` proxy, so the backend URL is not exposed to JavaScript.
 - Open `/login` and choose a demo Farmer, Expert, or Admin persona. Mock credentials are not collected. The Demo controls panel changes persona and success/empty/error scenario.
 - Mock screens and fixtures are demonstrations, not live data or agronomic advice.
 
@@ -28,7 +28,8 @@
 - `src/app/`: Next.js App Router. Route groups `(farmer)`, `(expert)`, and `(admin)` provide `/app`, `/expert`, and `/admin`.
 - `src/components/portal-shell.tsx`: shared portal shells, role navigation, demo availability and planned-phase labels. Planned tags derive from built-route membership; update route support when screens are implemented.
 - Phase 6b screens/services: `src/components/account-screens.tsx`; resource services `notifications.ts`, `subscription.ts`, `notification-preferences.ts`, `expert-performance.ts`, `expert-coverage.ts`; metrics/validation in `src/lib/expert-performance.ts` and `src/lib/account-validation.ts`.
-- `src/features/`: retained legacy feature code.
+- `src/features/farmers/components/` and `src/features/experts/components/`: role-specific portal UI. Route pages import from each feature's component barrel.
+- `src/features/legacy-farmer-login/`: retained legacy feature code.
 - `src/services/`: resource interfaces, selectors, and `adapters/mock.ts` / `adapters/api.ts`; market price mock/API adapters live in `src/services/market-prices.ts`.
 - `src/mocks/`: deterministic demo fixtures and scenario resolution.
 - `src/types/`: domain models; mark unconfirmed frontend fields as proposed.
@@ -167,7 +168,7 @@ Statuses: **built** = mock-first and works in demo mode; **legacy** = older back
 ### Phase 7b — production safety, browser tests and accessibility
 
 - Production fails closed unless `NEXT_PUBLIC_DATA_MODE` is valid; API mode also requires an API base URL. Demo picker, controls, scenarios, indicator, and cookie are limited to allowed mock mode. API errors do not fall back to mock fixtures.
-- API-mode login retains the existing farmer `POST /auth/login` and staff `POST /staff/login` paths; both are recorded as unconfirmed in section A of `docs/missing-endpoints.md`. The proxy accepts server-side `API_URL` as an override for `NEXT_PUBLIC_API_BASE_URL`.
+- API-mode login retains the existing farmer `POST /auth/login` and staff `POST /staff/login` paths; both are recorded as unconfirmed in section A of `docs/missing-endpoints.md`. The proxy reads the server-only `API_URL` setting.
 - API-connected portal routes are `/admin/farmers/:id`, `/admin/experts`, `/admin/market-prices`, `/admin/advisories`, `/admin/products`, `/admin/subscriptions`, `/admin/pricing`, `/admin/quotes`, `/admin/sms-sessions`, `/admin/audit`, `/admin/overview`, `/admin/requests`, `/expert/overview`, and `/expert/requests`. Other API-mode portal routes show a localized not-connected page.
 - Playwright inventory: farmer request/expert acceptance lifecycle; map/CSP regression; admin outbreak alert; locale persistence; demo error/empty states; route guards; manifest/service-worker/offline behavior; skip-link keyboard flow; and axe scans. Run `npm run test:e2e`; the production server uses port 3100 and `.next-e2e`. Desktop runs the suite; mobile (360×740) runs farmer lifecycle and accessibility.
 - Axe scanned all requested farmer, expert, admin, and login routes with WCAG 2.0/2.1 A/AA tags, excluding `.leaflet-container`. Desktop and mobile scans passed with 0 critical, 0 serious, 0 moderate, and 0 minor findings after the dark-theme contrast corrections.
@@ -176,7 +177,7 @@ Statuses: **built** = mock-first and works in demo mode; **legacy** = older back
 
 ## Production configuration
 
-- Production API deployment requires `NEXT_PUBLIC_DATA_MODE=api` and `NEXT_PUBLIC_API_BASE_URL`. The Next.js backend proxy also reads server-side `API_URL` as an optional upstream override. Do not put credentials or secrets in `NEXT_PUBLIC_*` variables.
+- Production API deployment requires `NEXT_PUBLIC_DATA_MODE=api` and server-only `API_URL`. The Next.js backend proxy reads only `API_URL`; do not publish the backend origin through a `NEXT_PUBLIC_*` variable. The proxy keeps browser requests same-origin, so browser CORS configuration is not needed for this app.
 - The app fails closed with a localized configuration message when the production data mode is unset/invalid, or when API mode has no upstream URL. Mock mode is allowed in production only with `NEXT_PUBLIC_DEMO_ENABLED=true`; use `NEXT_PUBLIC_DATA_MODE=mock NEXT_PUBLIC_DEMO_ENABLED=true` for an explicitly public demo deployment.
 - Demo controls and demo persona/cookie behavior are available only in allowed mock mode. API mode ignores demo identity and shows the not-connected page for routes outside the API-connected list above.
 - Live integration remains blocked on the unconfirmed resource contracts in section F of `docs/missing-endpoints.md`; see section A there for login paths that still need confirmation.

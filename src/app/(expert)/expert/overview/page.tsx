@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { ExpertQueueScreen } from "@/components/expert-request-screens";
+import { ExpertQueueScreen } from "@/features/experts/components";
 import { EmptyState, ErrorState, LoadingState, SuccessState } from "@/components/portal-state";
 import { expertRequestService } from "@/services/expert-requests";
 import { getDataMode, getDemoScenario } from "@/lib/data-mode";

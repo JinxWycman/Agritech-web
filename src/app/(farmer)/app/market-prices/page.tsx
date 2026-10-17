@@ -1,4 +1,4 @@
-import { MarketPricesScreen } from "@/components/market-prices-screen";
+import { MarketPricesScreen } from "@/features/farmers/components";
 
 export default function MarketPricesPage() {
   return <MarketPricesScreen />;

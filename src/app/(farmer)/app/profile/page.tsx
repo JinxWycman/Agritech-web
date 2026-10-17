@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { ErrorState, EmptyState, LoadingState, SuccessState } from "@/components/portal-state";
-import { FarmProfileMapLoader } from "@/components/farm-profile-map-loader";
+import { FarmProfileMapLoader } from "@/features/farmers/components";
 import { farmerProfileService } from "@/services";
 import { farmerProfileSchema, type FarmerProfileFormValues } from "@/lib/farmer-profile-schema";
 import { clampToKenya, countyFromCoordinates, isWithinKenya } from "@/lib/kenya-location";
