@@ -52,7 +52,18 @@ const navigation: Record<UserRole, Item[]> = {
 const roots: Record<UserRole, string> = { farmer: "/app", expert: "/expert", admin: "/admin" };
 const supportedDemoScreens = new Set(["/app/overview", "/app/profile", "/app/recommendations", "/app/livestock", "/app/agrovets", "/app/market-prices", "/app/risks", "/app/notifications", "/app/subscription", "/app/settings", "/expert/overview", "/expert/requests", "/expert/availability", "/expert/performance", "/admin/overview", "/admin/requests", "/admin/outbreaks", "/app/requests", "/app/requests/new"]);
 const legacyBuiltScreens = new Set(["/admin/farmers", "/admin/experts", "/admin/market-prices", "/admin/advisories", "/admin/products", "/admin/subscriptions", "/admin/pricing", "/admin/quotes", "/admin/sms-sessions", "/admin/audit"]);
-const apiConnectedScreens = new Set([...legacyBuiltScreens, "/admin/overview", "/admin/requests", "/expert/overview", "/expert/requests"]);
+const apiConnectedScreens = new Set([
+  ...legacyBuiltScreens,
+  "/admin/overview",
+  "/admin/requests",
+  "/expert/overview",
+  "/expert/requests",
+  "/expert/availability",
+  "/app/overview",
+  "/app/profile",
+  "/app/recommendations",
+  "/app/livestock",
+]);
 function isApiConnectedRoute(pathname: string): boolean {
   return apiConnectedScreens.has(pathname) || /^\/admin\/farmers\/[^/]+$/.test(pathname);
 }
