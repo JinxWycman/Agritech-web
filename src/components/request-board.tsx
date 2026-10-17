@@ -9,6 +9,7 @@ import { when } from "@/lib/format";
 export type StaffRequest = {
   id: string;
   farmer_id?: string;
+  expert_id: string | null;
   farmer_name: string | null;
   farmer_phone: string | null;
   county_name: string | null;
@@ -189,7 +190,7 @@ export function RequestBoard({ perspective = "admin" }: { perspective?: "admin" 
               </div>
             </dl>
             <div className="mt-5 flex flex-wrap gap-2">
-              {open.status === "Pending" ? (
+              {open.status === "Pending" && (!officer || open.expert_id !== null) ? (
                 <Button disabled={patch.isPending} onClick={() => patch.mutate({ id: open.id, status: "Accepted" })}>
                   {patch.isPending ? "Saving…" : officer ? "Accept this visit" : "Accept visit"}
                 </Button>

@@ -92,11 +92,21 @@ export type ResourceService<T> = {
 };
 
 export type RecommendationService = {
+  listSaved(): Promise<LiveRecommendation[]>;
+  generate(kind: "crop" | "livestock", answers: Record<string, string | number | boolean | null>): Promise<GeneratedLiveRecommendation>;
   getForFarm(
     kind: "crop" | "livestock",
     point: Coordinates,
     conditions?: Pick<FarmConditionsSnapshot, "ndviTrend" | "rainfallTrend"> | null,
   ): Promise<{ zone: AgroZone; recommendations: Recommendation[] } | null>;
+};
+export type LiveRecommendation = {
+  id: string; title: string; recommendation_text: string; recommendation_data: Record<string, unknown> | null;
+  is_sent: boolean; sms_deliveries: { status: string; failure_reason: string | null; submitted_at: string; delivered_at: string | null }[];
+};
+export type GeneratedLiveRecommendation = {
+  recommendation: { id: string; kind: string; primary: { name: string; crop?: string; livestock?: string }; why_fit: string; alternatives: { name: string; crop?: string; livestock?: string }[]; actions: string[] };
+  sms: { status: string; reason?: string };
 };
 
 export type VendorService = {

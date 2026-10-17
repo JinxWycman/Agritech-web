@@ -1,5 +1,5 @@
 import { getDataMode, getDemoScenario, getMockDelayMs } from "@/lib/data-mode";
-import { getFarmerProfile } from "@/lib/api";
+import { farmerApi, getFarmerProfile } from "@/lib/api";
 import { countyFromCoordinates } from "@/lib/kenya-location";
 import { persistDemoProfile, readDemoProfile, resetDemoProfile } from "@/lib/farmer-profile";
 import { demoFarmerProfile } from "@/mocks/fixtures";
@@ -32,16 +32,35 @@ const apiAdapter: FarmerProfileService = {
       farmSizeAcres: null,
       crops: [],
       livestock: [],
-      subCounty: "",
-      ward: "",
-      latitude: null,
-      longitude: null,
+      subCounty: profile.sub_county ?? "",
+      ward: profile.ward ?? "",
+      latitude: profile.latitude,
+      longitude: profile.longitude,
       county: profile.county_id,
-      profile_complete: false,
+      profile_complete: Boolean(profile.latitude !== null && profile.longitude !== null),
     };
   },
-  async saveProfile() {
-    throw new Error("Farmer profile writes and farm location fields are not implemented until their backend contract is confirmed.");
+  async saveProfile(profile) {
+    const saved = await farmerApi<Awaited<ReturnType<typeof getFarmerProfile>>>("/farmers/me", {
+      method: "PUT",
+      body: JSON.stringify({
+        latitude: profile.latitude,
+        longitude: profile.longitude,
+        sub_county: profile.subCounty || null,
+        ward: profile.ward || null,
+      }),
+    });
+    return {
+      farmSizeAcres: null,
+      crops: profile.crops,
+      livestock: profile.livestock,
+      subCounty: saved.sub_county ?? "",
+      ward: saved.ward ?? "",
+      latitude: saved.latitude,
+      longitude: saved.longitude,
+      county: saved.county_id,
+      profile_complete: Boolean(saved.latitude !== null && saved.longitude !== null),
+    };
   },
   resetDemoProfile() {
     throw new Error("Reset demo profile is only available in mock mode.");

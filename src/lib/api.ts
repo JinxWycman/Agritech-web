@@ -242,12 +242,38 @@ export async function loginFarmer(phone_number: string, pin: string) {
   return data;
 }
 
+export type County = { id: string; name: string; latitude: number; longitude: number };
+export type FarmerRegistration = {
+  full_name: string;
+  national_id: string;
+  phone_number: string;
+  pin: string;
+  county_id: string;
+};
+
+export async function listCounties(): Promise<County[]> {
+  return api<County[]>("/counties");
+}
+
+export async function registerFarmer(payload: FarmerRegistration): Promise<FarmerProfile> {
+  return api<FarmerProfile>("/farmers/register", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export type FarmerProfile = {
   id: string;
   full_name: string;
   national_id: string;
   phone_number: string;
   county_id: string;
+  constituency_id: string | null;
+  ward_id: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  sub_county: string | null;
+  ward: string | null;
   is_active: boolean;
 };
 
@@ -348,7 +374,18 @@ export async function farmerApi<T>(path: string, options: RequestInit = {}, retr
 }
 
 export async function getFarmerProfile() {
-  return farmerApi<FarmerProfile>("/auth/me");
+  return farmerApi<FarmerProfile>("/farmers/me");
+}
+
+export async function getSavedRecommendations() {
+  return farmerApi<import("@/services/contracts").LiveRecommendation[]>("/recommendations/");
+}
+
+export async function generateRecommendation(kind: "crop" | "livestock", answers: Record<string, string | number | boolean | null>) {
+  return farmerApi<import("@/services/contracts").GeneratedLiveRecommendation>("/recommendations/generate", {
+    method: "POST",
+    body: JSON.stringify({ kind, answers }),
+  });
 }
 
 export async function getExperts(
@@ -361,7 +398,7 @@ export async function getExperts(
   if (params.limit) query.set("limit", String(params.limit));
   if (params.offset) query.set("offset", String(params.offset));
   const suffix = query.size ? "?" + query.toString() : "";
-  return farmerApi<ExpertListResponse>("/experts" + suffix);
+  return farmerApi<ExpertListResponse>("/experts/" + suffix);
 }
 
 export async function createExpertRequest(payload: ExpertRequestPayload) {

@@ -104,6 +104,13 @@ Statuses: **built** = mock-first and works in demo mode; **legacy** = older back
 
 ## Phase log
 
+### Live API wiring follow-up — 2026-10-17
+
+- Added farmer registration using `GET /counties`, `POST /farmers/register`, then `POST /auth/login`; it uses the backend's required `full_name`, `national_id`, `phone_number`, `pin`, and `county_id` fields.
+- Connected recommendation pages to `GET /recommendations/` and the explicit generate action to `POST /recommendations/generate` with `{ kind, answers }`. The backend saves the recommendation and attempts SMS submission; the screen reports the provider result and saved delivery states.
+- Corrected the expert queue adapter to use `GET /admin/expert-requests?status=...&limit=6&offset=0`, consume the backend's paginated response, and preserve officer assignment scoping.
+- Typecheck passed. Other service stubs remain; see the live API wiring note in `docs/missing-endpoints.md`.
+
 ### Phase 1 — foundation
 
 - Added portal shells, route groups, navigation guards, login personas, and legacy route redirects.
@@ -205,7 +212,7 @@ Statuses: **built** = mock-first and works in demo mode; **legacy** = older back
 
 - Phase 6c is deferred by the owner: legacy admin pages still work in api mode; mock versions are parked in the backlog.
 - Next: live backend integration is a separate later phase; Phase 7b is complete.
-- Backlog: Phase 6c mock admin screens; vendor portal UI; admin markets CRUD; a real heatmap; live backend integration per section F of `docs/missing-endpoints.md`; server-backed notifications, payment, preferences/PIN, expert performance/coverage, outbreak SMS delivery, recipients, and read-state contracts.
+- Backlog: Phase 6c mock admin screens; vendor portal UI; admin markets CRUD; a real heatmap; remaining live backend integration per section F of `docs/missing-endpoints.md`; server-backed notifications, payment, preferences/PIN, expert performance/coverage, outbreak SMS delivery, recipients, and read-state contracts.
 - Backlog: rerun the full Playwright suite after the contrast fixes. There are currently no `test.fixme` items.
 
 - Kiswahili translations need native-speaker review; agronomy copy also needs expert review.

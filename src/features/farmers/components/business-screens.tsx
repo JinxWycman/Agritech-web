@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { EmptyState, ErrorState, LoadingState } from "@/components/portal-state";
 import { VendorMapLoader } from "@/components/vendor-map-loader";
 import { isOpenNow } from "@/lib/vendor-hours";
@@ -12,6 +12,7 @@ import { formatKes } from "@/lib/format";
 import { toE164Kenya, toWhatsAppKenya } from "@/lib/phone";
 import type { Coordinates } from "@/lib/kenya-location";
 import { farmConditionsService, farmerProfileService, recommendationService, vendorService } from "@/services";
+import { getDataMode } from "@/lib/data-mode";
 import { pickLocalized, type Recommendation, type Vendor, type VendorWithDistance } from "@/types/business";
 
 type Locale = "en" | "sw";
@@ -125,23 +126,47 @@ function RecommendationCard({ recommendation, locale }: { recommendation: Recomm
 export function RecommendationScreen({ kind }: { kind: "crop" | "livestock" }) {
   const t = useTranslations("business");
   const locale = localeOf(useLocale());
+  const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: ["business-recommendations", kind],
     queryFn: async () => {
       const profile = await farmerProfileService.getProfile();
-      if (!profile || profile.latitude === null || profile.longitude === null) return { point: null, result: null };
+      if (!profile) return { point: null, result: null, saved: [] };
+      if (getDataMode() === "api" && (profile.latitude === null || profile.longitude === null)) return { point: null, result: null, saved: await recommendationService.listSaved() };
+      if (profile.latitude === null || profile.longitude === null) return { point: null, result: null, saved: [] };
+      if (getDataMode() === "api") return { point: { latitude: profile.latitude, longitude: profile.longitude }, result: null, saved: await recommendationService.listSaved() };
       const point = { latitude: profile.latitude, longitude: profile.longitude };
       const conditions = await farmConditionsService.getSnapshot(point.latitude, point.longitude);
-      return { point, result: await recommendationService.getForFarm(kind, point, conditions) };
+      return { point, result: await recommendationService.getForFarm(kind, point, conditions), saved: [] };
     },
+  });
+  const generate = useMutation({
+    mutationFn: async () => {
+      const profile = await farmerProfileService.getProfile();
+      return recommendationService.generate(kind, {
+        crops: profile?.crops.join(", ") ?? "",
+        livestock: profile?.livestock.join(", ") ?? "",
+        sub_county: profile?.subCounty ?? "",
+        ward: profile?.ward ?? "",
+      });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["business-recommendations", kind] }),
   });
   if (query.isLoading) return <LoadingState />;
   if (query.isError) return <ErrorState onRetry={() => { void query.refetch(); }} message={t("loadError")} />;
-  if (!query.data?.point) return <section className="space-y-4"><h1 className="text-2xl font-bold">{t(kind === "crop" ? "cropTitle" : "livestockTitle")}</h1><EmptyState title={t("pinRequiredTitle")} text={t("pinRequiredText")} /><Link href="/app/profile" className="inline-flex min-h-12 items-center rounded-xl bg-forest-700 px-4 font-semibold text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-forest-500/40">{t("completeProfile")}</Link></section>;
-  const recommendations = query.data.result?.recommendations ?? [];
+  const queryData = query.data;
+  if (!queryData) return <LoadingState />;
+  if (!queryData.point && getDataMode() !== "api") return <section className="space-y-4"><h1 className="text-2xl font-bold">{t(kind === "crop" ? "cropTitle" : "livestockTitle")}</h1><EmptyState title={t("pinRequiredTitle")} text={t("pinRequiredText")} /><Link href="/app/profile" className="inline-flex min-h-12 items-center rounded-xl bg-forest-700 px-4 font-semibold text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-forest-500/40">{t("completeProfile")}</Link></section>;
+  const recommendations = queryData.result?.recommendations ?? [];
   return (
     <div className="space-y-5">
-      <header><h1 className="text-2xl font-bold">{t(kind === "crop" ? "cropTitle" : "livestockTitle")}</h1><p className="mt-2 text-sm text-[var(--muted)]">{t("sampleLabel")}</p>{locale === "sw" && <p className="mt-1 text-sm font-medium">{t("expertReview")}</p>}</header>
+      <header><h1 className="text-2xl font-bold">{t(kind === "crop" ? "cropTitle" : "livestockTitle")}</h1>{getDataMode() === "api" ? <p className="mt-2 text-sm text-[var(--muted)]">{t("liveRecommendationIntro")}</p> : <p className="mt-2 text-sm text-[var(--muted)]">{t("sampleLabel")}</p>}{locale === "sw" && <p className="mt-1 text-sm font-medium">{t("expertReview")}</p>}</header>
+      {getDataMode() === "api" && <section className="space-y-3">
+        <button type="button" onClick={() => generate.mutate()} disabled={generate.isPending} className="min-h-12 rounded-xl bg-forest-700 px-4 font-semibold text-white disabled:opacity-60">{generate.isPending ? t("generatingRecommendation") : t("generateAndSms")}</button>
+        {generate.isError && <ErrorState onRetry={() => generate.mutate()} message={generate.error instanceof Error ? generate.error.message : t("loadError")} />}
+        {generate.data && <article className="panel space-y-2 p-4" aria-live="polite"><h2 className="text-lg font-bold">{generate.data.recommendation.primary.name}</h2><p>{generate.data.recommendation.why_fit}</p>{generate.data.recommendation.alternatives.length > 0 && <p>{t("alternatives")}: {generate.data.recommendation.alternatives.map((item) => item.name).join(", ")}</p>}{generate.data.recommendation.actions.length > 0 && <ul className="list-disc pl-5">{generate.data.recommendation.actions.map((action, index) => <li key={index}>{action}</li>)}</ul>}<p className="rounded-lg bg-[var(--surface-muted)] p-3 text-sm">{generate.data.sms.status === "error" ? generate.data.sms.reason ?? t("smsSubmissionFailed") : t("smsSubmitted", { status: generate.data.sms.status })}</p></article>}
+        {queryData.saved.map((item) => <article key={item.id} className="panel space-y-2 p-4"><h2 className="font-bold">{item.title}</h2><p className="text-sm">{item.recommendation_text}</p>{item.sms_deliveries.map((delivery, index) => <p key={`${delivery.submitted_at}-${index}`} className="text-xs text-[var(--muted)]">{t("smsDeliveryStatus", { status: delivery.status })}{delivery.failure_reason ? `: ${delivery.failure_reason}` : ""}</p>)}</article>)}
+      </section>}
       {!recommendations.length
         ? <EmptyState title={t("recommendationsEmptyTitle")} text={t("recommendationsEmptyText")} />
         : <div className="space-y-5">{recommendations.map((recommendation) => <RecommendationCard key={recommendation.id} recommendation={recommendation} locale={locale} />)}</div>}

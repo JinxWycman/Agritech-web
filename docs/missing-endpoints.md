@@ -1,5 +1,11 @@
 # Backend contract register
 
+## Live API wiring update — 2026-10-17
+
+The current frontend API mode now has farmer registration (`GET /counties`, `POST /farmers/register`), farmer login (`POST /auth/login`), crop/livestock recommendation listing (`GET /recommendations/`) and generation (`POST /recommendations/generate`), plus the expert queue (`GET /admin/expert-requests?status=...&limit=6&offset=0`). Recommendation generation saves first and attempts SMS submission; the response includes its SMS status. The expert queue consumes the backend's paginated `items/total` response and is scoped for the signed-in staff member.
+
+Still unconnected in API mode: crop/livestock registries, farmer request listing/detail/cancel/feedback (the backend currently supports create and staff status update only), weather/farm-condition display, market price presentation/history, notification read state/preferences, subscriptions/payments, outbreak console actions, vendor directory/product offers, expert performance, assignment settings, and several admin lifecycle controls. Profile reads/writes, expert listing for staff, and officer availability now use confirmed backend routes. A successful sign-in does not imply every screen action is live; unsupported actions remain explicit stubs or have no matching backend route/schema.
+
 The specification confirms product capabilities and selected business rules, not the backend's current request or response schemas. TypeScript fields described as proposed must be confirmed before implementing live adapters. Mock data is deterministic sample content and is not agronomic advice.
 
 ## A. Decisions before connecting
@@ -21,11 +27,11 @@ The specification confirms product capabilities and selected business rules, not
 |---|---|---|---|---|---|
 | Authentication and roles | `POST /auth` or legacy `/auth/login`; staff login/refresh/logout | `src/types/domain.ts` `DemoAuthResult`, `UserRole` | Authenticate credentials; authorize every resource; define token lifecycle and roles | `/login`, all portals | Capability and frontend roles confirmed; paths, payloads, token and role mapping are legacy/proposed |
 | Farmer, crop and livestock records | Existing farmer, `farmer-crops`, and `farmer-livestocks` resource groups; exact paths TBD | `src/types/domain.ts` `Farmer`, `Crop`, `Livestock` | Scope reads/writes to the authenticated farmer and validate entity ownership | Farmer profile, recommendations | Resource groups are named by the spec; paths and response fields are proposed/unconfirmed |
-| Farmer profile and farm location | Existing farmer/profile resources; profile write/location endpoint TBD | `src/types/domain.ts` `FarmerProfile`; `src/types/business.ts` `Coordinates` usage | Bind to authenticated farmer; validate coordinates; resolve authoritative county from coordinates; define completion rules | `/app/profile`, `/app/overview` | Profile concepts confirmed; location/write fields proposed; write adapter not implemented |
+| Farmer profile and farm location | `GET/PUT /farmers/me`; `GET /counties` and location child selectors | `src/types/domain.ts` `FarmerProfile`; `src/types/business.ts` `Coordinates` usage | Bind to authenticated farmer; validate coordinates; resolve authoritative county from coordinates; define completion rules | `/app/profile`, `/app/overview` | Live reads and supported location writes are wired; farm size and crop/livestock catalog fields remain unavailable |
 | Farm conditions | Endpoint TBD | `src/types/domain.ts` `FarmConditionsSnapshot` | Return location/time-bounded weather, rainfall normal and NDVI with units and provenance | Farmer dashboard, expert case brief, recommendations | Proposed fields; no confirmed endpoint |
 | Farmer dashboard counts | Open expert request and unread alert count endpoints TBD | `src/types/domain.ts` farmer count service interfaces | Scope counts to authenticated farmer and current statuses/read state | `/app/overview` | Proposed; mock counts only |
 | Expert request lifecycle | Existing `POST/PATCH /expert-requests` or legacy `/expert-request`; offers and detail endpoints TBD | `src/lib/request-lifecycle.ts` `ExpertRequestRecord`; `src/services/contracts.ts` lifecycle service | Enforce valid transitions, actor permissions, server-side offer expiry/re-offer, unique reference codes, notifications and audit | `/app/requests`, `/expert/requests`, `/admin/requests` | Lifecycle labels Pending/Offered/Accepted/Completed are spec-confirmed; API state machine and fields proposed. Legacy calls are listed in E |
-| Experts and availability | Existing `GET /experts`; availability endpoint TBD | `src/types/domain.ts` `Expert`; `src/types/business.ts` expert-independent location | Enforce staff identity and availability permissions; return only necessary PII | Expert queue, admin assignment | Expert directory is legacy-existing, unconfirmed; scoring/location fields proposed |
+| Experts and availability | Staff `GET /admin/experts`; `PATCH /admin/me/availability`; farmer `GET /experts/` | `src/types/domain.ts` `Expert`; `src/types/business.ts` expert-independent location | Enforce staff identity and availability permissions; return only necessary PII | Expert queue, admin assignment | Staff listing and officer availability are wired; expert coordinates are not returned by the backend |
 | Symptoms | Catalogue endpoint TBD | `src/services/contracts.ts` `Symptom` | Stable language-neutral codes; return labels by locale or locale-neutral text keys; validate request codes | `/app/requests/new` | Proposed; deterministic demo catalogue only |
 | Assignment settings and scoring | Admin read/write settings endpoint TBD | `src/lib/request-lifecycle.ts` `RequestSettings`, `ScoredExpert` | Validate non-negative weights, at least one positive weight, timeout policy, and perform authoritative server-side scoring | `/admin/requests` | Proposed; demo scoring and settings only |
 | Crop variety catalogue | Catalogue endpoint TBD | `src/types/business.ts` `CropVariety`, `Suitability` | Return localized English/Kiswahili content, agronomist-validated suitability, maturity, risks, planting window, spacing and rotation/intercropping | `/app/recommendations` | Specific varieties and card fields confirmed; schema, ranges, and all sample values proposed |
@@ -79,18 +85,18 @@ These calls were retained to preserve existing behavior. They are not confirmed 
 | Resource/screen | Legacy call and behavior | Status |
 |---|---|---|
 | Farmer login | `POST /auth/login` with `{ phone_number, pin }` | Legacy-existing; spec lists `POST /auth`, path/payload unconfirmed |
-| Farmer dashboard/profile baseline | `GET /auth/me` | Legacy-existing; response mapping unconfirmed |
+| Farmer dashboard/profile baseline | `GET /farmers/me` | Live wiring added; response fields are mapped to the frontend profile model |
 | Staff login/session | `POST /staff/login`, `POST /staff/refresh`, `POST /staff/logout` | Legacy-existing; contract unconfirmed |
 | Staff identity/session bootstrap | `GET /staff/me` | Legacy-existing; contract unconfirmed |
 | Admin overview | `GET /admin/overview` | Legacy-existing; response mapping unconfirmed |
-| Expert queue summary | `GET /admin/expert-requests?status=Pending|Accepted|Completed&limit=6&offset=0` | Legacy-existing; expert access and response unconfirmed |
+| Expert queue summary | `GET /admin/expert-requests?status=Pending|Accepted|Completed&limit=6&offset=0` | Live wiring added; endpoint is staff-scoped and returns `PageRequests`; confirm field mapping |
 | Expert lookup | `GET /experts?is_available=true&limit=50&offset=0` | Legacy-existing; filters/mapping unconfirmed |
 | Legacy farmer request submission | `POST /expert-request` | Legacy-existing; spec names plural `/expert-requests`; contract unconfirmed |
 | Legacy expert request board and availability | Existing `POST/PATCH /expert-requests` and `PATCH /admin/me/availability` behavior retained by the legacy API UI | Legacy-existing; lifecycle contract unconfirmed |
 | Products | Existing `/products` CRUD/list resource | Legacy-existing; does not provide vendor, indicative price or stock |
 | Market prices | The spec describes `/market-prices` endpoint families keyed by `/county/{id}` and `/crop/{id}`; no matching helpers exist in `src/lib/api.ts` | No helper could be wrapped unchanged; Phase 5 API adapter remains an explicit not-implemented stub pending a confirmed contract |
 
-Phase 4 recommendation, vendor directory/profile, product-offer and vendor-event API adapters are explicit not-implemented stubs. No new HTTP calls were added.
+Phase 4 vendor directory/profile, product-offer and vendor-event API adapters remain explicit not-implemented stubs. Recommendation listing and generation now use the confirmed farmer endpoints above; the local catalogue recommendation adapter remains mock-only.
 
 ## F. Checklist for switching a resource to API mode
 

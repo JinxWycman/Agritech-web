@@ -1,7 +1,8 @@
 import {
   api,
   getFarmerProfile,
-  getExperts,
+  getSavedRecommendations,
+  generateRecommendation,
   getAccessToken,
   loginFarmer,
   loginStaff,
@@ -83,27 +84,22 @@ export const apiAdminSummaryService: AdminSummaryService = {
 
 export const apiExpertRequestService: ExpertRequestService = {
   async getQueueSummary(): Promise<ExpertQueueSummary> {
+    type BackendRequest = { id: string; status: "Pending" | "Accepted" | "Completed"; issue_type: string; farmer_id: string };
     const [pending, accepted, completed] = await Promise.all([
-      api<Page<{ id: string; status: "Pending"; issue_type: string; farmer_name?: string }>>(
-        "/admin/expert-requests?status=Pending&limit=6&offset=0",
-      ),
-      api<Page<{ id: string; status: "Accepted"; issue_type: string; farmer_name?: string }>>(
-        "/admin/expert-requests?status=Accepted&limit=6&offset=0",
-      ),
-      api<Page<{ id: string }>>("/admin/expert-requests?status=Completed&limit=1&offset=0"),
+      api<Page<BackendRequest>>("/admin/expert-requests?status=Pending&limit=6&offset=0"),
+      api<Page<BackendRequest>>("/admin/expert-requests?status=Accepted&limit=6&offset=0"),
+      api<Page<BackendRequest>>("/admin/expert-requests?status=Completed&limit=1&offset=0"),
     ]);
     return {
       pending: pending.items.map((row) => ({
         id: row.id,
         status: "Pending",
         issueType: row.issue_type,
-        farmerName: row.farmer_name,
       })),
       accepted: accepted.items.map((row) => ({
         id: row.id,
         status: "Accepted",
         issueType: row.issue_type,
-        farmerName: row.farmer_name,
       })),
       completed: completed.total,
     };
@@ -112,7 +108,15 @@ export const apiExpertRequestService: ExpertRequestService = {
 
 export const apiExpertsService: ExpertsService = {
   async listAvailable(): Promise<Expert[]> {
-    const result = await getExperts({ is_available: true, limit: 50, offset: 0 });
+    const result = await api<Page<{
+      id: string;
+      full_name: string;
+      phone_number: string;
+      expert_type: string;
+      county_id: string;
+      organization: string;
+      is_available: boolean;
+    }>>("/admin/experts?is_available=true&limit=50&offset=0");
     return result.items.map((row) => ({
       id: row.id,
       name: row.full_name,
@@ -150,7 +154,29 @@ export const apiLifecycleExpertRequestService: LifecycleExpertRequestService = {
 
 export const apiLifecycleExpertsService: LifecycleExpertsService = {
   async listAll() { return apiExpertsService.listAvailable(); },
-  async setAvailability() { return lifecycleNotImplemented("Expert availability update"); },
+  async setAvailability(_expertId, available) {
+    const row = await api<{
+      id: string;
+      full_name: string;
+      phone_number: string;
+      expert_type: string;
+      county_id: string;
+      organization: string;
+      is_available: boolean;
+    }>("/admin/me/availability", {
+      method: "PATCH",
+      body: JSON.stringify({ is_available: available }),
+    });
+    return {
+      id: row.id,
+      name: row.full_name,
+      phone: row.phone_number,
+      expertType: row.expert_type,
+      county: row.county_id,
+      organization: row.organization,
+      available: row.is_available,
+    };
+  },
   getActingExpertId() { return lifecycleNotImplemented("Demo expert selection"); },
   setActingExpertId() { return lifecycleNotImplemented("Demo expert selection"); },
 };
@@ -165,7 +191,9 @@ export const apiRequestSettingsService: RequestSettingsService = {
 };
 
 export const apiRecommendationService: RecommendationService = {
-  async getForFarm() { return lifecycleNotImplemented("Crop and livestock recommendations"); },
+  async listSaved() { return getSavedRecommendations(); },
+  async generate(kind, answers) { return generateRecommendation(kind, answers); },
+  async getForFarm() { return null; },
 };
 
 export const apiVendorService: VendorService = {

@@ -12,6 +12,7 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { formatKenyaNational, toE164Kenya } from "@/lib/phone";
 import { pinSchema } from "@/lib/account-validation";
+import Link from "next/link";
 
 const farmerSchema = z.object({
   phone: z.string().regex(/^\+254\d{9}$/),
@@ -147,6 +148,7 @@ export function LoginExperience() {
                   {busy ? t("common.loading") : t("login.continue")}
                 </button>
               </form>
+              {accountType === "farmer" && <p className="mt-4 text-sm">{t("signup.noAccount")} <Link href="/signup" className="font-semibold text-forest-800 underline">{t("signup.createAccount")}</Link></p>}
             </>
           )}
           {t("common.languageReview") && <p className="mt-5 text-xs text-[var(--muted)]">{t("common.languageReview")}</p>}
