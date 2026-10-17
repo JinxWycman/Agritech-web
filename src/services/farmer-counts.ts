@@ -1,5 +1,6 @@
 import { getDataMode, getDemoScenario, getMockDelayMs } from "@/lib/data-mode";
 import { notificationsService } from "@/services/notifications";
+import { farmerApi } from "@/lib/api";
 import { readLifecycleRequests } from "@/lib/request-store";
 import { selectAdapter } from "@/services/selection";
 import type { FarmerAlertsService, FarmerRequestsService } from "@/services/contracts";
@@ -15,7 +16,8 @@ const mockRequests: FarmerRequestsService = {
 };
 const apiAlerts: FarmerAlertsService = {
   async getUnreadCount() {
-    throw new Error("Farmer unread notifications count API adapter is not implemented until its backend contract is confirmed.");
+    const response = await farmerApi<{ total: number }>("/notifications/?limit=1&offset=0");
+    return response.total;
   },
 };
 const apiRequests: FarmerRequestsService = {

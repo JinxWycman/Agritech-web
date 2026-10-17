@@ -1,6 +1,7 @@
 import {
   api,
   getFarmerProfile,
+  listCounties,
   getSavedRecommendations,
   generateRecommendation,
   getAccessToken,
@@ -42,13 +43,14 @@ export const apiAuthService: AuthService = {
 
 export const apiFarmerService: FarmerService = {
   async getDashboardSummary(): Promise<FarmerDashboardSummary> {
-    const farmer = await getFarmerProfile();
+    const [farmer, counties] = await Promise.all([getFarmerProfile(), listCounties()]);
+    const countyName = counties.find((county) => county.id === farmer.county_id)?.name ?? farmer.county_id;
     return {
       farmer: {
         id: farmer.id,
         name: farmer.full_name,
         phone: farmer.phone_number,
-        county: farmer.county_id,
+        county: countyName,
         active: farmer.is_active,
       },
     };

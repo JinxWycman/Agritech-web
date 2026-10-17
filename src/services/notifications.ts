@@ -1,4 +1,5 @@
 import { getDataMode, getDemoScenario, getMockDelayMs } from "@/lib/data-mode";
+import { farmerApi } from "@/lib/api";
 import { readLifecycleRequests } from "@/lib/request-store";
 import { farmerProfileService } from "@/services/farmer-profile";
 import { outbreakService } from "@/services/outbreaks";
@@ -61,7 +62,25 @@ const mockAdapter: NotificationsService = {
 };
 
 const apiAdapter: NotificationsService = {
-  async list() { throw new Error("Notifications API adapter is not implemented until the GET /notifications response contract is confirmed."); },
+  async list() {
+    type BackendNotification = {
+      id: string;
+      notification_type: string;
+      title: string;
+      message: string;
+      is_sent: boolean;
+      created_at: string;
+    };
+    const response = await farmerApi<{ items: BackendNotification[] }>("/notifications/?limit=100&offset=0");
+    return response.items.map((item) => ({
+      id: item.id,
+      kind: item.notification_type === "outbreak" ? "outbreak_alert" as const : item.notification_type === "expert_request" ? "expert_request" as const : "system" as const,
+      title: { en: item.title, sw: item.title },
+      body: { en: item.message, sw: item.message },
+      createdAt: Date.parse(item.created_at),
+      read: false,
+    }));
+  },
   async markRead() { throw new Error("Notification read-state API adapter is not implemented until its contract is confirmed."); },
   async markAllRead() { throw new Error("Notification read-state API adapter is not implemented until its contract is confirmed."); },
   async getUnreadCount() { throw new Error("Notification unread-count API adapter is not implemented until its contract is confirmed."); },

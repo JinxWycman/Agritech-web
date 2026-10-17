@@ -1,5 +1,5 @@
 import { getDataMode, getDemoScenario, getMockDelayMs } from "@/lib/data-mode";
-import { farmerApi, getFarmerProfile } from "@/lib/api";
+import { farmerApi, getFarmerProfile, listCounties } from "@/lib/api";
 import { countyFromCoordinates } from "@/lib/kenya-location";
 import { persistDemoProfile, readDemoProfile, resetDemoProfile } from "@/lib/farmer-profile";
 import { demoFarmerProfile } from "@/mocks/fixtures";
@@ -27,7 +27,8 @@ const mockAdapter: FarmerProfileService = {
 
 const apiAdapter: FarmerProfileService = {
   async getProfile() {
-    const profile = await getFarmerProfile();
+    const [profile, counties] = await Promise.all([getFarmerProfile(), listCounties()]);
+    const countyName = counties.find((county) => county.id === profile.county_id)?.name ?? profile.county_id;
     return {
       farmSizeAcres: null,
       crops: [],
@@ -36,7 +37,7 @@ const apiAdapter: FarmerProfileService = {
       ward: profile.ward ?? "",
       latitude: profile.latitude,
       longitude: profile.longitude,
-      county: profile.county_id,
+      county: countyName,
       profile_complete: Boolean(profile.latitude !== null && profile.longitude !== null),
     };
   },

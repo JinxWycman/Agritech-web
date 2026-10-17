@@ -63,6 +63,7 @@ const apiConnectedScreens = new Set([
   "/app/profile",
   "/app/recommendations",
   "/app/livestock",
+  "/app/notifications",
 ]);
 function isApiConnectedRoute(pathname: string): boolean {
   return apiConnectedScreens.has(pathname) || /^\/admin\/farmers\/[^/]+$/.test(pathname);

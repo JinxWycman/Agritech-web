@@ -82,7 +82,7 @@ export default function FarmerOverviewPage() {
           onRetry={() => void requestsQuery.refetch()}
         />
         <CountCard
-          title={t("farmDashboard.unreadAlerts")}
+          title={getDataMode() === "api" ? t("account.notificationsTitle") : t("farmDashboard.unreadAlerts")}
           query={alertsQuery}
           onRetry={() => void alertsQuery.refetch()}
         />
