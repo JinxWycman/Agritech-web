@@ -2,21 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Manila paper + forest ink — like a county agri office ledger, not a generic SaaS canvas. */
+/* Field notebook tones: warm paper, forest ink, and a little market gold. */
 :root {
-  --background: #efe6d4;
+  --background: #e9e4d9;
   --foreground: #1c1914;
-  --paper: #faf6ee;
+  --paper: #f7f3ea;
   --surface: #fffdf8;
-  --border: #d8d0c1;
-  --muted: #625d53;
+  --surface-muted: #eeeae0;
+  --border: #d5cec0;
+  --muted: #686257;
   --focus: #2f6f52;
   --accent-foreground: #166534;
-  --selection-background: #e8f2e9;
+  --selection-background: #dcecdf;
   --selection-foreground: #1c1914;
-  --positive-background: #edf7ef;
+  --positive-background: #e8f3e9;
   --positive-foreground: #173b28;
-  --shadow-panel: 0 1px 2px rgba(16, 40, 30, 0.04), 0 12px 32px rgba(16, 40, 30, 0.06);
+  --shadow-panel: 0 1px 2px rgba(16, 40, 30, 0.05), 0 10px 26px rgba(16, 40, 30, 0.055);
   color-scheme: light;
 }
 
@@ -25,6 +26,7 @@
   --foreground: #f4f1e8;
   --paper: #1d2721;
   --surface: #253129;
+  --surface-muted: #202b24;
   --border: #46554b;
   --muted: #c1c9c2;
   --focus: #9bd0ad;
@@ -44,8 +46,13 @@ html {
 body {
   color: var(--foreground);
   background-color: var(--background);
-  background-image: radial-gradient(900px 420px at 0% -8%, rgba(28, 71, 53, 0.09), transparent 55%);
+  background-image: linear-gradient(120deg, rgba(255, 255, 255, 0.32), transparent 36%), repeating-linear-gradient(0deg, rgba(54, 72, 57, 0.025) 0, rgba(54, 72, 57, 0.025) 1px, transparent 1px, transparent 5px);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+::selection {
+  color: var(--selection-foreground);
+  background: var(--selection-background);
 }
 
 @layer components {
@@ -58,9 +65,18 @@ body {
   }
 
   .panel {
-    @apply rounded-lg border shadow-panel;
+    @apply rounded-2xl border shadow-panel;
     border-color: var(--border);
     background-color: var(--paper);
+  }
+
+  .eyebrow {
+    @apply text-[10px] font-bold uppercase tracking-[0.18em];
+    color: var(--muted);
+  }
+
+  .page-heading {
+    @apply text-2xl font-semibold tracking-[-0.03em] sm:text-3xl;
   }
 
   .nav-scroll {

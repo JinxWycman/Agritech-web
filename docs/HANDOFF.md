@@ -191,6 +191,13 @@ Statuses: **built** = mock-first and works in demo mode; **legacy** = older back
 
 ## Release status
 
+### Shared UI polish — 2026-10-18
+
+- Refined the shared visual system around warm field-notebook surfaces, forest ink, soil accents, subtle paper texture, clearer focus/selection states, and reusable `eyebrow` / `page-heading` primitives.
+- Updated `PortalShell` with stronger role identity, a readable active navigation rail, calmer responsive mobile navigation, and improved content framing.
+- Updated login with a professional agricultural entry composition that communicates the product value without changing authentication behavior.
+- Validation: `npm run typecheck`, `npm run lint`, `npm test` (57 Vitest + 16 Node tests), and `npm run build` passed.
+
 **Frontend-ready, deployment/integration blocked**
 
 - Verified: the production safety guards, proxy configuration check, login-mode behavior, and connected-route boundary are implemented; desktop and mobile accessibility scans passed with zero reported violations; the two targeted post-fix axe runs passed.

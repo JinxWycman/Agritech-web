@@ -75,16 +75,27 @@ export function LoginExperience() {
   }
 
   return (
-    <main id="main" tabIndex={-1} className="min-h-dvh bg-[var(--background)] px-4 py-6 text-[var(--foreground)] sm:px-8">
+    <main id="main" tabIndex={-1} className="min-h-dvh overflow-hidden bg-[var(--background)] px-4 py-6 text-[var(--foreground)] sm:px-8">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-[var(--surface)] focus:p-3">{t("common.skipToMain")}</a>
       <div className="mx-auto flex max-w-5xl justify-end gap-4">
         <LanguageSwitcher />
         <ThemeToggle />
       </div>
-      <div className="mx-auto grid min-h-[80dvh] max-w-5xl place-items-center">
-        <section className="panel w-full max-w-xl p-6 sm:p-9">
+      <div className="mx-auto grid min-h-[80dvh] max-w-6xl items-center gap-10 py-8 lg:grid-cols-[1fr_460px] lg:gap-20">
+        <div className="hidden max-w-xl lg:block">
+          <p className="text-xs font-semibold uppercase tracking-[.22em] text-[var(--accent-foreground)]">Kenya · field intelligence</p>
+          <h1 className="mt-5 max-w-lg font-serif text-6xl leading-[0.96] tracking-[-0.04em] text-forest-950">Better decisions, from soil to market.</h1>
+          <div className="my-7 h-px max-w-sm bg-gradient-to-r from-forest-700 to-transparent" />
+          <p className="max-w-md text-lg leading-relaxed text-[var(--muted)]">Practical crop, livestock and expert support for the people growing Kenya&apos;s next harvest.</p>
+          <div className="mt-10 grid max-w-md grid-cols-3 gap-5 border-t border-[var(--border)] pt-5 text-xs text-[var(--muted)]">
+            <span><strong className="block text-2xl text-forest-800">01</strong>Know your farm</span>
+            <span><strong className="block text-2xl text-forest-800">02</strong>Act with confidence</span>
+            <span><strong className="block text-2xl text-forest-800">03</strong>Reach the right help</span>
+          </div>
+        </div>
+        <section className="panel w-full p-6 sm:p-9">
           <p className="text-xs font-semibold uppercase tracking-[.16em] text-[var(--accent-foreground)]">{t("common.appName")}</p>
-          <h1 className="mt-3 text-3xl font-bold">{t("login.title")}</h1>
+          <h2 className="mt-3 font-serif text-4xl leading-tight tracking-[-0.03em]">{t("login.title")}</h2>
           <p className="mt-2 text-[var(--muted)]">{t("login.subtitle")}</p>
 
           {demoMode ? (
@@ -100,7 +111,7 @@ export function LoginExperience() {
                   key={role}
                   type="button"
                   onClick={() => void demoLogin(role)}
-                  className="min-h-12 w-full rounded-xl bg-forest-700 px-4 py-3 text-left font-semibold text-white hover:bg-forest-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-forest-500/40"
+                  className="min-h-12 w-full rounded-md border border-forest-700/10 bg-forest-700 px-4 py-3 text-left font-semibold text-white hover:bg-forest-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-forest-500/40"
                 >
                   {t(`login.${label}`)}
                 </button>

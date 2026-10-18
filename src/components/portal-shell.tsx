@@ -102,9 +102,12 @@ export function PortalShell({ role, children }: { role: UserRole; children: Reac
         Skip to content
       </a>
       <div className="mx-auto flex min-h-dvh max-w-[1600px]">
-        <aside className="hidden w-64 shrink-0 flex-col border-r border-[var(--border)] bg-forest-950 p-4 text-white md:flex">
-          <Link href={`${roots[role]}/overview`} className="px-2 py-3 text-xl font-bold">{t("common.appName")}</Link>
-          <p className="mb-3 px-2 text-xs uppercase tracking-wider text-forest-200">{t(`nav.${role}`)}</p>
+        <aside className="hidden w-72 shrink-0 flex-col border-r border-[var(--border)] bg-forest-950 px-5 py-6 text-white md:flex">
+          <Link href={`${roots[role]}/overview`} className="group px-2 py-2">
+            <span className="block font-serif text-2xl leading-none text-cream-50">{t("common.appName")}</span>
+            <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.2em] text-forest-300">{t(`nav.${role}`)}</span>
+          </Link>
+          <div className="my-6 h-px bg-gradient-to-r from-forest-400/70 to-transparent" />
           <nav aria-label={t(`nav.${role}`)} className="flex-1 space-y-1 overflow-y-auto">
             {navigation[role].map((item) => {
               const href = `${roots[role]}${item.suffix}`;
@@ -114,7 +117,7 @@ export function PortalShell({ role, children }: { role: UserRole; children: Reac
                   key={item.key}
                   href={href}
                   aria-current={pathname === href ? "page" : undefined}
-                  className="flex min-h-11 items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm text-forest-50 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cream-100"
+                  className={`flex min-h-11 items-center justify-between gap-2 rounded-md border-l-2 px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cream-100 ${pathname === href ? "border-soil-400 bg-white/10 text-white" : "border-transparent text-forest-100 hover:bg-white/10 hover:text-white"}`}
                 >
                   <span>{t(`nav.${item.key}`)}</span>
                   {planned && <span className="text-[10px] text-forest-200">{t("common.planned", { phase: item.phase })}</span>}
@@ -127,11 +130,11 @@ export function PortalShell({ role, children }: { role: UserRole; children: Reac
           </button>
         </aside>
         <div className="min-w-0 flex-1">
-          <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--paper)]/95 p-3 backdrop-blur sm:p-4">
+          <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--paper)]/90 p-3 backdrop-blur sm:p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="font-semibold">{t(`nav.${role}`)}</p>
-                {demoMode && <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-950">{t("common.demoData")}</span>}
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">{t(`nav.${role}`)}</p>
+                {demoMode && <span className="mt-1 inline-flex rounded-sm bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-950">{t("common.demoData")}</span>}
                 {locale === "sw" && <span className="ml-2 text-xs text-[var(--muted)]">{t("common.languageReview")}</span>}
               </div>
               <div className="flex flex-wrap items-center gap-3">
@@ -140,10 +143,10 @@ export function PortalShell({ role, children }: { role: UserRole; children: Reac
                 <button onClick={signOut} className="min-h-10 rounded-lg border border-[var(--border)] px-3 text-sm md:hidden">{t("common.signOut")}</button>
               </div>
             </div>
-            <nav aria-label={t(`nav.${role}`)} className="nav-scroll mt-3 flex gap-2 overflow-x-auto md:hidden">
+            <nav aria-label={t(`nav.${role}`)} className="nav-scroll mt-4 flex gap-2 overflow-x-auto md:hidden">
               {navigation[role].map((item) => {
                 const href = `${roots[role]}${item.suffix}`;
-                return <Link key={item.key} href={href} className="whitespace-nowrap rounded-full border border-[var(--border)] px-3 py-2 text-xs">{t(`nav.${item.key}`)}{!isBuiltRoute(href) ? ` Â· ${t("common.planned", { phase: item.phase })}` : ""}</Link>;
+                return <Link key={item.key} href={href} className={`whitespace-nowrap rounded-md border px-3 py-2 text-xs ${pathname === href ? "border-forest-700 bg-forest-700 font-semibold text-white" : "border-[var(--border)] bg-[var(--surface)]"}`}>{t(`nav.${item.key}`)}{!isBuiltRoute(href) ? ` Â· ${t("common.planned", { phase: item.phase })}` : ""}</Link>;
               })}
             </nav>
           </header>

@@ -1,5 +1,9 @@
 # Backend contract register
 
+## UI polish note — 2026-10-18
+
+The shared frontend shell and login presentation were visually refined without changing service contracts, API behavior, routes, or backend requirements. No new endpoint is needed for this work.
+
 ## Live API wiring update — 2026-10-17
 
 The current frontend API mode now has farmer registration (`GET /counties`, `POST /farmers/register`), farmer login (`POST /auth/login`), crop/livestock recommendation listing (`GET /recommendations/`) and generation (`POST /recommendations/generate`), plus the expert queue (`GET /admin/expert-requests?status=...&limit=6&offset=0`). Recommendation generation saves first and attempts SMS submission; the response includes its SMS status. The expert queue consumes the backend's paginated `items/total` response and is scoped for the signed-in staff member.
