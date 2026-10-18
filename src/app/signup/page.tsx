@@ -64,7 +64,7 @@ export default function SignupPage() {
         longitude: point?.longitude ?? null,
       });
       await loginFarmer(phoneNumber, pin);
-      router.replace("/app/overview");
+      router.replace("/app/profile");
       router.refresh();
     } catch (cause) {
       setError(cause instanceof ApiError ? cause.message : t("createError"));

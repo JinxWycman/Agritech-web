@@ -2,6 +2,8 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { EmptyState, ErrorState, LoadingState, SuccessState } from "@/components/portal-state";
@@ -19,6 +21,7 @@ const FarmHealthChart = dynamic(
 
 export default function FarmerOverviewPage() {
   const t = useTranslations();
+  const router = useRouter();
   const summaryQuery = useQuery({ queryKey: ["farmer", "dashboard-summary"], queryFn: farmerDashboardService.getDashboardSummary });
   const profileQuery = useQuery({ queryKey: ["farmer", "profile"], queryFn: farmerProfileService.getProfile });
   const latitude = profileQuery.data?.latitude ?? demoDefaultFarmLocation.latitude;
@@ -29,6 +32,10 @@ export default function FarmerOverviewPage() {
   });
   const requestsQuery = useQuery({ queryKey: ["farmer", "open-requests"], queryFn: farmerRequestsService.getOpenCount });
   const alertsQuery = useQuery({ queryKey: ["farmer", "unread-alerts"], queryFn: farmerAlertsService.getUnreadCount });
+  const needsProfile = getDataMode() !== "mock" && profileQuery.data?.profile_complete === false;
+  useEffect(() => {
+    if (needsProfile) router.replace("/app/profile");
+  }, [needsProfile, router]);
 
   if (summaryQuery.isLoading) return <LoadingState />;
   if (summaryQuery.isError) {

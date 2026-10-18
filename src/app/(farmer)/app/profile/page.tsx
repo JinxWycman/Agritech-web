@@ -114,6 +114,7 @@ export default function FarmerProfilePage() {
     event.preventDefault();
     const next: string[] = farmEntryErrors(Object.values(crops), Object.values(livestock));
     if (liveMode ? !location.countyId || !location.constituencyId || !location.wardId : !subCounty.trim() || !ward.trim()) next.push("required");
+    if (!Object.keys(crops).length && !Object.keys(livestock).length) next.push("farmRequired");
     if (!position || !isWithinKenya(position)) next.push("locationRequired");
     setErrors(next);
     if (!next.length) saveMutation.mutate();
@@ -130,6 +131,7 @@ export default function FarmerProfilePage() {
   return (
     <div className="space-y-5">
       <h1 className="text-2xl font-bold">{t("title")}</h1>
+      {profileQuery.data && !profileQuery.data.profile_complete && liveMode && <EmptyState title={t("firstTimeTitle")} text={t("firstTimeText")} />}
       {profileQuery.data === null && <EmptyState title={t("firstTimeTitle")} text={t("firstTimeText")} />}
       {saveMutation.isError && <ErrorState onRetry={() => saveMutation.mutate()} message={t("saveError")} />}
       {saved && <SuccessState text={liveMode ? t("savedLive") : t("saved")} />}
@@ -180,6 +182,7 @@ export default function FarmerProfilePage() {
               );
             })}
           </div>
+          {errors.includes("farmRequired") && <p role="alert" className="text-sm text-red-700">{t("farmRequired")}</p>}
           {errors.includes("cropDetailsError") && <p role="alert" className="text-sm text-red-700">{t("cropDetailsError")}</p>}
         </section>
 

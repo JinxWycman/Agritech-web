@@ -79,7 +79,7 @@ const apiAdapter: FarmerProfileService = {
       latitude: profile.latitude,
       longitude: profile.longitude,
       county: counties.find((county) => county.id === profile.county_id)?.name ?? profile.county_id,
-      profile_complete: Boolean(profile.latitude !== null && profile.longitude !== null),
+      profile_complete: Boolean(profile.latitude !== null && profile.longitude !== null && (cropEntries.length || livestockEntries.length)),
     };
   },
   async saveProfile(profile) {
@@ -143,7 +143,7 @@ const apiAdapter: FarmerProfileService = {
       latitude: saved.latitude,
       longitude: saved.longitude,
       county: counties.find((county) => county.id === saved.county_id)?.name ?? saved.county_id,
-      profile_complete: Boolean(saved.latitude !== null && saved.longitude !== null),
+      profile_complete: Boolean(saved.latitude !== null && saved.longitude !== null && (cropEntries.length || livestockEntries.length)),
     };
   },
   resetDemoProfile() {

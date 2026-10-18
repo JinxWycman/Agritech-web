@@ -68,6 +68,15 @@ async function proxy(request: NextRequest, context: RouteContext) {
   let upstream: Response;
   try {
     upstream = await fetch(target, init);
+    // FastAPI redirects /farmer-crops to /farmer-crops/ with an absolute API URL.
+    // Follow that hop here; the browser must never see the API host (CSP blocks it).
+    if ([307, 308].includes(upstream.status)) {
+      const location = upstream.headers.get("location");
+      const next = location ? new URL(location, target) : null;
+      if (next && next.origin === new URL(UPSTREAM).origin) {
+        upstream = await fetch(`${UPSTREAM}${next.pathname}${next.search}`, { ...init, signal: AbortSignal.timeout(12_000) });
+      }
+    }
   } catch {
     return NextResponse.json(
       { detail: "Cannot reach the server." },

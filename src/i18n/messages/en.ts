@@ -123,6 +123,7 @@ const en = {
     demoSuccess: "This is sample information for review, not live farm advice.",
     demoEmptyAction: "Try the success scenario in Demo controls.",
     demoError: "The demo error scenario is active.",
+    retry: "Try again",
     notImplemented: "This information is not connected to the backend yet.",
   },
   dashboard: {
@@ -148,7 +149,8 @@ const en = {
   profile: {
     title: "Your farm profile",
     firstTimeTitle: "Start your farm profile",
-    firstTimeText: "Add a few details so the app can tailor future guidance to your farm.",
+    firstTimeText: "Add the crops or animals you keep and pin your farm on the map. This unlocks advice for your farm.",
+    farmRequired: "Choose at least one crop or animal you keep.",
     farmSize: "Farm size (acres)",
     farmSizeError: "Enter a farm size greater than zero.",
     crops: "Crops grown",

@@ -123,6 +123,7 @@ const sw = {
     demoSuccess: "Hizi ni taarifa za mfano kwa ukaguzi, si ushauri wa moja kwa moja wa shamba.",
     demoEmptyAction: "Chagua hali ya mafanikio katika vidhibiti vya majaribio.",
     demoError: "Hali ya hitilafu ya majaribio imewashwa.",
+    retry: "Jaribu tena",
     notImplemented: "Taarifa hizi bado hazijaunganishwa na seva.",
   },
   dashboard: {
@@ -148,7 +149,8 @@ const sw = {
   profile: {
     title: "Wasifu wa shamba lako",
     firstTimeTitle: "Anza wasifu wa shamba lako",
-    firstTimeText: "Ongeza maelezo machache ili programu iweze kutoa mwongozo unaofaa zaidi kwa shamba lako baadaye.",
+    firstTimeText: "Ongeza mazao au wanyama unaofuga na uweke alama ya shamba lako kwenye ramani ili upate ushauri unaofaa.",
+    farmRequired: "Chagua angalau zao moja au mnyama mmoja unayefuga.",
     farmSize: "Ukubwa wa shamba (ekari)",
     farmSizeError: "Weka ukubwa wa shamba ulio zaidi ya sifuri.",
     crops: "Mazao yanayolimwa",

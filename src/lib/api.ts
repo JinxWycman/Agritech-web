@@ -11,6 +11,7 @@ const PROXY = "/backend";
 const REQUEST_TIMEOUT_MS = 12_000;
 const ACCESS_KEY = "agritech_staff_access";
 const ROLE_KEY = "agritech_staff_role";
+const FARMER_KEY = "agritech_farmer_access";
 
 export type Page<T> = {
   items: T[];
@@ -34,6 +35,8 @@ export function getAccessToken(): string | null {
 }
 
 export function getFarmerAccessToken(): string | null {
+  // Survives page reloads for this browser tab; cleared on sign-out or expiry.
+  if (!farmerAccessToken && typeof window !== "undefined") farmerAccessToken = sessionStorage.getItem(FARMER_KEY);
   return farmerAccessToken;
 }
 
@@ -56,6 +59,7 @@ export function setSession(nextAccessToken: string, role: string) {
 
 export function setFarmerSession(nextAccessToken: string) {
   farmerAccessToken = nextAccessToken;
+  if (typeof window !== "undefined") sessionStorage.setItem(FARMER_KEY, nextAccessToken);
   writePortalRoleCookie("farmer");
 }
 
@@ -77,6 +81,7 @@ export function clearSession() {
 export function clearFarmerSession() {
   farmerAccessToken = null;
   if (typeof window !== "undefined") {
+    sessionStorage.removeItem(FARMER_KEY);
     document.cookie = "farmer_role=; Path=/; Max-Age=0; SameSite=Lax";
     document.cookie = "portal_role=; Path=/; Max-Age=0; SameSite=Lax";
   }
@@ -372,6 +377,8 @@ export function buildExpertRequestPayload({
 export async function farmerApi<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
   const token = getFarmerAccessToken();
   if (!token) {
+    clearFarmerSession();
+    expireSession();
     throw new ApiError("Please sign in to continue.", 401);
   }
 
@@ -391,6 +398,7 @@ export async function farmerApi<T>(path: string, options: RequestInit = {}, retr
 
   if (response.status === 401 && !retried) {
     clearFarmerSession();
+    expireSession();
     throw new ApiError("Session expired. Sign in again.", 401);
   }
 
