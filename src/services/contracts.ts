@@ -4,6 +4,7 @@ import type {
   ExpertQueueSummary,
   Expert,
   FarmerProfile,
+  ProfileCatalogue,
   FarmConditionsSnapshot,
   FarmerDashboardSummary,
   UserRole,
@@ -22,6 +23,7 @@ export type FarmerService = {
 
 export type FarmerProfileService = {
   getProfile(): Promise<FarmerProfile | null>;
+  getCatalogue(): Promise<ProfileCatalogue>;
   saveProfile(profile: Omit<FarmerProfile, "county" | "profile_complete">): Promise<FarmerProfile>;
   resetDemoProfile(): void;
 };

@@ -42,6 +42,7 @@ const navigation: Record<UserRole, Item[]> = {
     { key: "prices", suffix: "/market-prices", phase: 5 },
     { key: "advisories", suffix: "/advisories", phase: 6 },
     { key: "products", suffix: "/products", phase: 4 },
+    { key: "vendorListings", suffix: "/vendors", phase: 4 },
     { key: "subscriptions", suffix: "/subscriptions", phase: 7 },
     { key: "quotes", suffix: "/quotes", phase: 7 },
     { key: "sms", suffix: "/sms-sessions", phase: 7 },
@@ -51,7 +52,7 @@ const navigation: Record<UserRole, Item[]> = {
 
 const roots: Record<UserRole, string> = { farmer: "/app", expert: "/expert", admin: "/admin" };
 const supportedDemoScreens = new Set(["/app/overview", "/app/profile", "/app/recommendations", "/app/livestock", "/app/agrovets", "/app/market-prices", "/app/risks", "/app/notifications", "/app/subscription", "/app/settings", "/expert/overview", "/expert/requests", "/expert/availability", "/expert/performance", "/admin/overview", "/admin/requests", "/admin/outbreaks", "/app/requests", "/app/requests/new"]);
-const legacyBuiltScreens = new Set(["/admin/farmers", "/admin/experts", "/admin/market-prices", "/admin/advisories", "/admin/products", "/admin/subscriptions", "/admin/pricing", "/admin/quotes", "/admin/sms-sessions", "/admin/audit"]);
+const legacyBuiltScreens = new Set(["/admin/farmers", "/admin/experts", "/admin/market-prices", "/admin/advisories", "/admin/products", "/admin/subscriptions", "/admin/pricing", "/admin/quotes", "/admin/sms-sessions", "/admin/audit", "/admin/vendors"]);
 const apiConnectedScreens = new Set([
   ...legacyBuiltScreens,
   "/admin/overview",
@@ -64,6 +65,11 @@ const apiConnectedScreens = new Set([
   "/app/recommendations",
   "/app/livestock",
   "/app/notifications",
+  "/app/agrovets",
+  "/app/risks",
+  "/app/requests",
+  "/app/requests/new",
+  "/admin/outbreaks",
 ]);
 function isApiConnectedRoute(pathname: string): boolean {
   return apiConnectedScreens.has(pathname) || /^\/admin\/farmers\/[^/]+$/.test(pathname);

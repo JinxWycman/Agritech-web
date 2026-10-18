@@ -8,6 +8,9 @@
   --foreground: #1c1914;
   --paper: #f7f3ea;
   --surface: #fffdf8;
+  /* Two-series chart colours, validated for colour-blind separation on this surface. */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
   --surface-muted: #eeeae0;
   --border: #d5cec0;
   --muted: #686257;
@@ -26,6 +29,8 @@
   --foreground: #f4f1e8;
   --paper: #1d2721;
   --surface: #253129;
+  --series-1: #3987e5;
+  --series-2: #d95926;
   --surface-muted: #202b24;
   --border: #46554b;
   --muted: #c1c9c2;

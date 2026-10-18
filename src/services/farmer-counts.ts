@@ -16,13 +16,14 @@ const mockRequests: FarmerRequestsService = {
 };
 const apiAlerts: FarmerAlertsService = {
   async getUnreadCount() {
-    const response = await farmerApi<{ total: number }>("/notifications/?limit=1&offset=0");
-    return response.total;
+    const response = await farmerApi<{ unread_count: number }>("/notifications/unread-count");
+    return response.unread_count;
   },
 };
 const apiRequests: FarmerRequestsService = {
   async getOpenCount() {
-    throw new Error("Farmer open expert request count API adapter is not implemented until its backend contract is confirmed.");
+    const response = await farmerApi<{ total: number }>("/farmers/me/expert-requests?open=true&limit=1&offset=0");
+    return response.total;
   },
 };
 

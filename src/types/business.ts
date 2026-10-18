@@ -72,8 +72,12 @@ export type Vendor = {
   whatsapp: string;
   /** Spec-confirmed capability; structure is a proposed frontend shape. */
   openingHours: OpeningHours;
-  /** Spec-confirmed capability; sample rating is proposed demo data. */
-  rating: number;
+  /** Null until farmers have rated the vendor; the UI then omits the rating. */
+  rating: number | null;
+  /** Paid placement; must always be labelled as sponsored. */
+  sponsored?: boolean;
+  /** Vendor's own hours text, shown when it cannot be read into openingHours. */
+  openingHoursText?: string | null;
   /** Certified suppliers are named by the spec; certification source is unconfirmed. */
   certified: boolean;
   categories: string[];
@@ -85,9 +89,9 @@ export type VendorProduct = {
   name: LocalizedText;
   category: string;
   /** Indicative demo offer only; the spec requests product price and stock. */
-  priceKES: number;
+  priceKES: number | null;
   unit: LocalizedText;
-  stockStatus: "in_stock" | "low_stock" | "out_of_stock";
+  stockStatus: "in_stock" | "low_stock" | "out_of_stock" | "unknown";
 };
 
 export type VendorWithDistance = Vendor & { distanceKm: number | null };

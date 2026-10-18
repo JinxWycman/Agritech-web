@@ -20,3 +20,20 @@ export const farmerProfileSchema = z.object({
 });
 
 export type FarmerProfileFormValues = z.infer<typeof farmerProfileSchema>;
+
+export const SOIL_TYPES = ["clay", "loam", "sandy", "silt", "volcanic"] as const;
+export const EXPERIENCE_LEVELS = ["beginner", "intermediate", "experienced"] as const;
+
+/** Details the backend requires for each selected crop and animal; returns error message keys. */
+export function farmEntryErrors(
+  crops: { farmSizeAcres: number; soilType: string; experienceLevel: string }[],
+  livestock: { herdSize: number }[],
+): ("cropDetailsError" | "herdSizeError")[] {
+  const errors: ("cropDetailsError" | "herdSizeError")[] = [];
+  const cropOk = (entry: (typeof crops)[number]) => Number.isFinite(entry.farmSizeAcres) && entry.farmSizeAcres > 0
+    && (SOIL_TYPES as readonly string[]).includes(entry.soilType)
+    && (EXPERIENCE_LEVELS as readonly string[]).includes(entry.experienceLevel);
+  if (!crops.every(cropOk)) errors.push("cropDetailsError");
+  if (!livestock.every((entry) => Number.isInteger(entry.herdSize) && entry.herdSize > 0)) errors.push("herdSizeError");
+  return errors;
+}

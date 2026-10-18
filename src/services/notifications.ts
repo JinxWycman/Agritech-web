@@ -70,20 +70,27 @@ const apiAdapter: NotificationsService = {
       message: string;
       is_sent: boolean;
       created_at: string;
+      read: boolean;
     };
     const response = await farmerApi<{ items: BackendNotification[] }>("/notifications/?limit=100&offset=0");
     return response.items.map((item) => ({
       id: item.id,
-      kind: item.notification_type === "outbreak" ? "outbreak_alert" as const : item.notification_type === "expert_request" ? "expert_request" as const : "system" as const,
+      kind: item.notification_type === "Disease Alert" ? "outbreak_alert" as const : item.notification_type === "Expert Update" ? "expert_request" as const : "system" as const,
       title: { en: item.title, sw: item.title },
       body: { en: item.message, sw: item.message },
       createdAt: Date.parse(item.created_at),
-      read: false,
+      read: item.read,
     }));
   },
-  async markRead() { throw new Error("Notification read-state API adapter is not implemented until its contract is confirmed."); },
-  async markAllRead() { throw new Error("Notification read-state API adapter is not implemented until its contract is confirmed."); },
-  async getUnreadCount() { throw new Error("Notification unread-count API adapter is not implemented until its contract is confirmed."); },
+  async markRead(id) {
+    await farmerApi(`/notifications/${encodeURIComponent(id)}/read`, { method: "PATCH" });
+  },
+  async markAllRead() {
+    await farmerApi("/notifications/mark-all-read", { method: "POST" });
+  },
+  async getUnreadCount() {
+    return (await farmerApi<{ unread_count: number }>("/notifications/unread-count")).unread_count;
+  },
 };
 
 export const notificationsService = selectAdapter(getDataMode(), mockAdapter, apiAdapter);

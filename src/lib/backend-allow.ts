@@ -26,10 +26,19 @@ const FARMER_PATHS = new Set([
   "/farmer-livestock",
   "/farmer-livestock/",
   "/counties",
+  "/crops",
+  "/livestock",
+  "/weather",
+  "/farmers/me/expert-requests",
+  "/vendors",
+  "/outbreak-alerts/nearby",
+  "/notifications/unread-count",
+  "/notifications/mark-all-read",
   "/recommendations",
   "/recommendations/",
   "/recommendations/environment",
   "/recommendations/generate",
+  "/recommendations/jobs",
   "/notifications",
   "/notifications/",
   "/market-prices",
@@ -59,11 +68,16 @@ export function allowedBackendPath(segments: string[]): string | null {
   }
   const path = `/${segments.join("/")}`;
   if (STAFF_PATHS.has(path) || FARMER_PATHS.has(path)) return path;
+  if (path === "/counties/locate") return path;
   if (/^\/counties\/[0-9a-f-]+\/constituencies$/i.test(path)) return path;
   if (/^\/counties\/constituencies\/[0-9a-f-]+\/wards$/i.test(path)) return path;
+  if (/^\/farmers\/me\/expert-requests\/[0-9a-f-]+(?:\/(?:cancel|feedback))?$/i.test(path)) return path;
+  if (/^\/vendors\/[0-9a-f-]+(?:\/(?:products|events))?$/i.test(path)) return path;
+  if (/^\/notifications\/[0-9a-f-]+\/read$/i.test(path)) return path;
   if (/^\/farmer-crops\/[0-9a-f-]+$/i.test(path)) return path;
   if (/^\/farmer-livestock\/[0-9a-f-]+$/i.test(path)) return path;
   if (/^\/recommendations\/[0-9a-f-]+(?:\/sms)?$/i.test(path)) return path;
+  if (/^\/recommendations\/jobs\/[0-9a-f-]+$/i.test(path)) return path;
   if (/^\/market-prices\/(?:county|crop)\/[0-9a-f-]+$/i.test(path)) return path;
   if (/^\/advisories\/(?:county|category)\/[^/]+$/i.test(path)) return path;
   if (/^\/advisories\/[0-9a-f-]+$/i.test(path)) return path;
@@ -81,13 +95,19 @@ export function allowedBackendMethod(method: string, path: string): boolean {
   if (path === "/market-prices" || path === "/market-prices/") return ["GET", "POST"].includes(verb);
   if (path === "/market-prices/scrape") return verb === "POST";
   if (path === "/staff/me" || path === "/auth/me" || path === "/experts" || path === "/experts/" || path === "/counties" || path.startsWith("/counties/") || path === "/farmer-crops" || path === "/farmer-crops/" || path === "/farmer-livestock" || path === "/farmer-livestock/" || path.startsWith("/market-prices/") || path === "/market-prices" || path === "/market-prices/" || path.startsWith("/advisories/") || path === "/advisories" || path === "/advisories/" || path.startsWith("/products/") || path === "/products" || path === "/products/" || path === "/notifications" || path === "/notifications/" || path === "/recommendations" || path === "/recommendations/" || path === "/recommendations/environment" || /^\/recommendations\/[0-9a-f-]+$/i.test(path)) return verb === "GET";
+  if (/^\/vendors\/[0-9a-f-]+\/events$/i.test(path) || path === "/notifications/mark-all-read") return verb === "POST";
+  if (/^\/notifications\/[0-9a-f-]+\/read$/i.test(path)) return verb === "PATCH";
+  if (path === "/vendors" || path === "/outbreak-alerts/nearby" || path === "/notifications/unread-count" || /^\/vendors\/[0-9a-f-]+(?:\/products)?$/i.test(path)) return verb === "GET";
+  if (path === "/crops" || path === "/livestock" || path === "/weather" || path === "/farmers/me/expert-requests" || /^\/farmers\/me\/expert-requests\/[0-9a-f-]+$/i.test(path)) return verb === "GET";
+  if (/^\/farmers\/me\/expert-requests\/[0-9a-f-]+\/(?:cancel|feedback)$/i.test(path)) return verb === "POST";
   if (path === "/farmers/me") return ["GET", "PUT", "DELETE"].includes(verb);
   if (path === "/farmers/change-pin") return verb === "PUT";
   if (path === "/staff/me") return verb === "GET";
   if (path === "/expert-request/status") return verb === "PATCH";
   if (/^\/(?:farmer-crops|farmer-livestock)\/[0-9a-f-]+$/i.test(path)) return verb === "DELETE";
   if (/^\/recommendations\/[0-9a-f-]+\/sms$/i.test(path)) return verb === "POST";
-  if (path === "/recommendations/generate") return verb === "POST";
+  if (path === "/recommendations/generate" || path === "/recommendations/jobs") return verb === "POST";
+  if (/^\/recommendations\/jobs\/[0-9a-f-]+$/i.test(path)) return verb === "GET";
   if (/^\/market-prices\/(?:county|crop)\/[0-9a-f-]+$/i.test(path)) return verb === "GET";
   if (/^\/products\/category\/[^/]+$/i.test(path) || /^\/products\/[0-9a-f-]+$/i.test(path) || /^\/advisories\/(?:county|category)\/[^/]+$/i.test(path) || /^\/advisories\/[0-9a-f-]+$/i.test(path)) return verb === "GET";
   return false;

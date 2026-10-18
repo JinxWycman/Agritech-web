@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { MapContainer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
-import { KENYA_BOUNDS } from "@/lib/kenya-location";
+import { KENYA_BOUNDS, isWithinKenya } from "@/lib/kenya-location";
 import { MapResizeHandler } from "@/components/map-resize-handler";
 import { OsmTileLayer } from "@/components/osm-tile-layer";
 import { useTranslations } from "next-intl";
@@ -56,7 +56,7 @@ export default function VendorMap({
         <MapResizeHandler />
         <OsmTileLayer onTileError={() => setTileError(true)} />
         {farm && <Marker position={[farm.latitude, farm.longitude]} icon={farmIcon} title={farmLabel}><Popup>{farmLabel}</Popup></Marker>}
-        {vendors.map((vendor) => {
+        {vendors.filter((vendor) => isWithinKenya(vendor.location)).map((vendor) => {
           const label = pickLocalized(vendor.name, locale);
           return (
             <Marker key={vendor.id} position={[vendor.location.latitude, vendor.location.longitude]} icon={vendorIcon} title={label}>

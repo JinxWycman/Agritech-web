@@ -22,7 +22,18 @@ export type FarmerProfile = {
   longitude: number | null;
   county: string;
   profile_complete: boolean;
+  /** Per-crop details stored by the backend farmer-crops records. */
+  cropEntries?: CropEntry[];
+  /** Per-animal details stored by the backend farmer-livestock records. */
+  livestockEntries?: LivestockEntry[];
+  countyId?: string;
+  constituencyId?: string;
+  wardId?: string;
 };
+
+export type CropEntry = { cropId: string; name: string; farmSizeAcres: number; soilType: string; experienceLevel: string };
+export type LivestockEntry = { livestockId: string; name: string; herdSize: number };
+export type ProfileCatalogue = { crops: { id: string; name: string }[]; livestock: { id: string; name: string }[] };
 
 /** All snapshot fields are proposed; no farm-conditions endpoint shape is confirmed. */
 export type FarmConditionsSnapshot = {

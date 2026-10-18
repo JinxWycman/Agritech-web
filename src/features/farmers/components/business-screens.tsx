@@ -22,6 +22,30 @@ function localeOf(locale: string): Locale {
 
 function money(amount: number, locale: Locale): string { return formatKes(amount, locale); }
 
+function hoursKnown(vendor: Vendor): boolean {
+  return Object.values(vendor.openingHours).some(Boolean);
+}
+
+function VendorFacts({ vendor }: { vendor: Vendor }) {
+  const t = useTranslations("business");
+  return <p className="flex flex-wrap items-center gap-2 text-sm">
+    {vendor.sponsored && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-950">{t("sponsored")}</span>}
+    {vendor.rating !== null && <span>{t("rating")}: {vendor.rating.toFixed(1)} / 5 ·</span>}
+    <span>{vendor.certified ? t("certified") : t("notCertified")}</span>
+  </p>;
+}
+
+function OpenStatus({ vendor }: { vendor: Vendor }) {
+  const t = useTranslations("business");
+  if (!hoursKnown(vendor)) return <p className="text-sm">{vendor.openingHoursText || t("hoursNotListed")}</p>;
+  return <p className="text-sm">{t(isOpenNow(vendor.openingHours) ? "openNow" : "closedNow")}</p>;
+}
+
+function ProductPrice({ amount, unit, locale }: { amount: number | null; unit: string; locale: Locale }) {
+  const t = useTranslations("business");
+  return <>{amount === null ? t("priceOnRequest") : `${money(amount, locale)} / ${unit}`}</>;
+}
+
 function ContactLinks({ vendor }: { vendor: Vendor }) {
   const labels = useTranslations("business");
   const [error, setError] = useState(false);
@@ -50,9 +74,10 @@ function NearbyVendor({ vendor, locale }: { vendor: VendorWithDistance; locale: 
     <li className="rounded-xl border border-[var(--border)] p-3">
       <p className="font-semibold">{pickLocalized(vendor.name, locale)}</p>
       <p className="text-sm text-[var(--muted)]">{vendor.county}{vendor.distanceKm !== null ? ` · ${vendor.distanceKm.toFixed(1)} ${t("kmAway")}` : ""}</p>
-      <p className="text-sm">{t(isOpenNow(vendor.openingHours) ? "openNow" : "closedNow")}</p>
+      {vendor.sponsored && <VendorFacts vendor={vendor} />}
+      <OpenStatus vendor={vendor} />
       <p className="my-2 text-sm">{t("phoneLabel")}: <a className="underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest-600" href={`tel:${toE164Kenya(vendor.phone)}`}>{vendor.phone}</a></p>
-      <details><summary className="min-h-11 cursor-pointer py-2 font-medium">{t("openingHours")}</summary><OpeningHoursList vendor={vendor} /></details>
+      {hoursKnown(vendor) && <details><summary className="min-h-11 cursor-pointer py-2 font-medium">{t("openingHours")}</summary><OpeningHoursList vendor={vendor} /></details>}
       <ContactLinks vendor={vendor} />
       <Link href={`/app/agrovets/${vendor.id}`} className="mt-2 inline-block rounded underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest-600">{t("vendorDetails")}</Link>
     </li>
@@ -112,7 +137,7 @@ function RecommendationCard({ recommendation, locale }: { recommendation: Recomm
         {recommendation.matchedProducts.length
           ? <ul className="mt-2 space-y-2">{recommendation.matchedProducts.map(({ product, vendor }) => <li key={product.id} className="rounded-lg border border-[var(--border)] p-3">
             <p className="font-medium">{pickLocalized(product.name, locale)} · {pickLocalized(vendor.name, locale)}</p>
-            <p className="text-sm">{money(product.priceKES, locale)} / {pickLocalized(product.unit, locale)}</p>
+            <p className="text-sm"><ProductPrice amount={product.priceKES} unit={pickLocalized(product.unit, locale)} locale={locale} /></p>
             <p className="text-sm text-[var(--muted)]">{t("indicativePrice")} · {t(`stock.${product.stockStatus}`)}</p>
           </li>)}</ul>
           : <p className="mt-1 text-sm text-[var(--muted)]">{t("noProductMatches")}</p>}
@@ -180,8 +205,8 @@ function VendorRow({ vendor, locale }: { vendor: VendorWithDistance; locale: Loc
     <li className="panel space-y-2 p-4">
       <Link href={`/app/agrovets/${vendor.id}`} className="block rounded font-semibold underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest-600">{pickLocalized(vendor.name, locale)}</Link>
       <p className="text-sm">{vendor.county}{vendor.distanceKm !== null ? ` · ${vendor.distanceKm.toFixed(1)} ${t("kmAway")}` : ""}</p>
-      <p className="text-sm">{t("rating")}: {vendor.rating.toFixed(1)} / 5 · {vendor.certified ? t("certified") : t("notCertified")}</p>
-      <p className="text-sm">{t(isOpenNow(vendor.openingHours) ? "openNow" : "closedNow")}</p>
+      <VendorFacts vendor={vendor} />
+      <OpenStatus vendor={vendor} />
     </li>
   );
 }
@@ -263,13 +288,13 @@ export function VendorProfileScreen() {
   return (
     <div className="space-y-5">
       <Link href="/app/agrovets" className="inline-flex min-h-11 items-center rounded-lg underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest-600">{t("backToVendors")}</Link>
-      <header><h1 className="text-2xl font-bold">{pickLocalized(vendor.name, locale)}</h1><p className="mt-2 text-sm text-[var(--muted)]">{t("sampleLabel")}</p></header>
+      <header><h1 className="text-2xl font-bold">{pickLocalized(vendor.name, locale)}</h1>{getDataMode() === "mock" && <p className="mt-2 text-sm text-[var(--muted)]">{t("sampleLabel")}</p>}</header>
       {eventError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-900">{t("eventError")}</p>}
       <section className="panel space-y-4 p-4 sm:p-6">
-        <p>{vendor.county} · {t("rating")}: {vendor.rating.toFixed(1)} / 5 · {vendor.certified ? t("certified") : t("notCertified")}</p>
-        <p>{t(isOpenNow(vendor.openingHours) ? "openNow" : "closedNow")}</p>
-        <h2 className="font-semibold">{t("openingHours")}</h2>
-        <OpeningHoursList vendor={vendor} />
+        <p>{vendor.county}</p>
+        <VendorFacts vendor={vendor} />
+        <OpenStatus vendor={vendor} />
+        {hoursKnown(vendor) && <><h2 className="font-semibold">{t("openingHours")}</h2><OpeningHoursList vendor={vendor} /></>}
         <p>{t("phoneLabel")}: {vendor.phone}</p>
         <ContactLinks vendor={vendor} />
       </section>
@@ -277,7 +302,7 @@ export function VendorProfileScreen() {
         <h2 className="text-xl font-bold">{t("productsTitle")}</h2>
         {!products.length ? <EmptyState title={t("productsEmptyTitle")} text={t("productsEmptyText")} /> : <ul className="grid gap-3 sm:grid-cols-2">{products.map((product) => <li key={product.id} className="panel space-y-2 p-4">
           <h3 className="font-semibold">{pickLocalized(product.name, locale)}</h3>
-          <p>{money(product.priceKES, locale)} / {pickLocalized(product.unit, locale)}</p>
+          <p><ProductPrice amount={product.priceKES} unit={pickLocalized(product.unit, locale)} locale={locale} /></p>
           <p className="text-sm">{t("indicativePrice")}</p>
           <p>{t(`stock.${product.stockStatus}`)}</p>
         </li>)}</ul>}

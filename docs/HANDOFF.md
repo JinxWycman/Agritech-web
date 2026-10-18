@@ -104,6 +104,14 @@ Statuses: **built** = mock-first and works in demo mode; **legacy** = older back
 
 ## Phase log
 
+- 2026-10-19 recommendation jobs (polling), admin agrovet management and engagement reports (`/admin/vendors`, chart colours validated for colour-blind separation via `--series-1/2`), live outbreak console and farmer alert feed, structured symptoms, rainfall/NDVI trend inputs for risk rules.
+
+- 2026-10-19 notifications read state and live agrovet directory/profile/products/events; sponsored badge, price-on-request and unknown stock states; stock/certification labels no longer say "sample". New Kiswahili strings need review.
+
+- 2026-10-18 profile/location/sign-in: per-crop and per-animal profile inputs synced to the backend, County → Sub-county → Ward picker (`src/components/location-picker.tsx`) on sign-up and profile, device location fixed (Permissions-Policy) and matched via `/counties/locate`, single role-detecting sign-in (`src/lib/login-attempts.ts`). New Kiswahili strings need review.
+
+- 2026-10-18 live wiring: farm conditions (`GET /weather`), farmer expert-request list/detail/cancel/feedback and open count, crop/livestock catalogue proxy paths, and new weather condition keys (`clear`, `rain`, `thunderstorm`, `mist`; Kiswahili needs review). See `docs/missing-endpoints.md`.
+
 ### Live API wiring follow-up — 2026-10-17
 
 - Added farmer registration using `GET /counties`, `POST /farmers/register`, then `POST /auth/login`; it uses the backend's required `full_name`, `national_id`, `phone_number`, `pin`, and `county_id` fields.

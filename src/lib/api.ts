@@ -249,10 +249,40 @@ export type FarmerRegistration = {
   phone_number: string;
   pin: string;
   county_id: string;
+  constituency_id?: string | null;
+  ward_id?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 };
+
+export type Constituency = { id: string; name: string; county_id: string; latitude: number; longitude: number };
+export type Ward = { id: string; name: string; constituency_id: string };
+export type LocationMatch = { county: County; constituency: Constituency; wards: Ward[]; distance_km: number; approximate: boolean };
+export type CatalogueItem = { id: string; name: string };
 
 export async function listCounties(): Promise<County[]> {
   return api<County[]>("/counties");
+}
+
+export async function listConstituencies(countyId: string): Promise<Constituency[]> {
+  return api<Constituency[]>(`/counties/${encodeURIComponent(countyId)}/constituencies`);
+}
+
+export async function listWards(constituencyId: string): Promise<Ward[]> {
+  return api<Ward[]>(`/counties/constituencies/${encodeURIComponent(constituencyId)}/wards`);
+}
+
+/** Nearest county and sub-county for a point; approximate (centroid based). */
+export async function locateCoordinates(latitude: number, longitude: number): Promise<LocationMatch> {
+  return api<LocationMatch>(`/counties/locate?latitude=${latitude}&longitude=${longitude}`);
+}
+
+export async function listCropCatalogue(): Promise<CatalogueItem[]> {
+  return api<CatalogueItem[]>("/crops");
+}
+
+export async function listLivestockCatalogue(): Promise<CatalogueItem[]> {
+  return api<CatalogueItem[]>("/livestock");
 }
 
 export async function registerFarmer(payload: FarmerRegistration): Promise<FarmerProfile> {
@@ -381,11 +411,38 @@ export async function getSavedRecommendations() {
   return farmerApi<import("@/services/contracts").LiveRecommendation[]>("/recommendations/");
 }
 
-export async function generateRecommendation(kind: "crop" | "livestock", answers: Record<string, string | number | boolean | null>) {
-  return farmerApi<import("@/services/contracts").GeneratedLiveRecommendation>("/recommendations/generate", {
+type RecommendationJob = {
+  job_id: string;
+  status: "queued" | "running" | "done" | "failed";
+  error?: string;
+} & Partial<import("@/services/contracts").GeneratedLiveRecommendation>;
+
+const JOB_POLL_MS = 2000;
+const JOB_TIMEOUT_MS = 120_000;
+
+/**
+ * AI generation takes several seconds, so the backend queues it as a job;
+ * poll until it finishes and return the same shape as the old direct call.
+ */
+export async function generateRecommendation(
+  kind: "crop" | "livestock",
+  answers: Record<string, string | number | boolean | null>,
+  wait: (ms: number) => Promise<void> = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+) {
+  const started = await farmerApi<RecommendationJob>("/recommendations/jobs", {
     method: "POST",
     body: JSON.stringify({ kind, answers }),
   });
+  const deadline = Date.now() + JOB_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    await wait(JOB_POLL_MS);
+    const job = await farmerApi<RecommendationJob>(`/recommendations/jobs/${encodeURIComponent(started.job_id)}`);
+    if (job.status === "done" && job.recommendation) {
+      return { recommendation: job.recommendation, sms: job.sms } as import("@/services/contracts").GeneratedLiveRecommendation;
+    }
+    if (job.status === "failed") throw new ApiError(job.error || "Could not generate a recommendation.", 422);
+  }
+  throw new ApiError("The recommendation is taking longer than expected. Check your saved recommendations shortly.", 504);
 }
 
 export async function getExperts(

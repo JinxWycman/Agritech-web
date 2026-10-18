@@ -18,6 +18,32 @@ describe("allowedBackendPath", () => {
     assert.equal(allowedBackendPath(["recommendations", "123e4567-e89b-12d3-a456-426614174001", "sms"]), "/recommendations/123e4567-e89b-12d3-a456-426614174001/sms");
   });
 
+  it("allows farmer weather, catalogue and own expert-request routes", () => {
+    const id = "123e4567-e89b-12d3-a456-426614174000";
+    assert.equal(allowedBackendPath(["weather"]), "/weather");
+    assert.equal(allowedBackendPath(["crops"]), "/crops");
+    assert.equal(allowedBackendPath(["livestock"]), "/livestock");
+    assert.equal(allowedBackendPath(["farmers", "me", "expert-requests"]), "/farmers/me/expert-requests");
+    assert.equal(allowedBackendPath(["farmers", "me", "expert-requests", id, "cancel"]), `/farmers/me/expert-requests/${id}/cancel`);
+    assert.equal(allowedBackendPath(["farmers", "me", "expert-requests", id, "delete"]), null);
+    assert.equal(allowedBackendMethod("GET", "/weather"), true);
+    assert.equal(allowedBackendMethod("POST", "/weather"), false);
+    assert.equal(allowedBackendMethod("GET", `/farmers/me/expert-requests/${id}`), true);
+    assert.equal(allowedBackendMethod("POST", `/farmers/me/expert-requests/${id}/feedback`), true);
+    assert.equal(allowedBackendMethod("GET", `/farmers/me/expert-requests/${id}/cancel`), false);
+    assert.equal(allowedBackendMethod("POST", "/recommendations/jobs"), true);
+    assert.equal(allowedBackendMethod("GET", `/recommendations/jobs/${id}`), true);
+    assert.equal(allowedBackendMethod("GET", "/outbreak-alerts/nearby"), true);
+    assert.equal(allowedBackendMethod("POST", "/outbreak-alerts/nearby"), false);
+    assert.equal(allowedBackendMethod("GET", "/vendors"), true);
+    assert.equal(allowedBackendMethod("GET", `/vendors/${id}/products`), true);
+    assert.equal(allowedBackendMethod("POST", `/vendors/${id}/events`), true);
+    assert.equal(allowedBackendMethod("DELETE", `/vendors/${id}`), false);
+    assert.equal(allowedBackendMethod("PATCH", `/notifications/${id}/read`), true);
+    assert.equal(allowedBackendMethod("POST", "/notifications/mark-all-read"), true);
+    assert.equal(allowedBackendMethod("GET", "/notifications/unread-count"), true);
+  });
+
   it("blocks open-proxy and traversal paths", () => {
     assert.equal(allowedBackendPath(["ussd"]), null);
     assert.equal(allowedBackendPath(["sms"]), null);

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { api, farmerApi } from "@/lib/api";
 import { getDataMode, getDemoScenario, getMockDelayMs } from "@/lib/data-mode";
 import { alertsNearPoint, farmersInRadius, weekStart } from "@/lib/outbreaks";
 import { readLifecycleRequests } from "@/lib/request-store";
@@ -161,14 +162,66 @@ const mockAdapter: OutbreakService = {
   },
 };
 
+type BackendCell = {
+  cell_id: string; center_lat: number; center_lng: number; count: number; by_symptom: Record<string, number>;
+  issue_type: "crop" | "livestock"; week_start: string; flagged: boolean;
+};
+type BackendAlert = {
+  id: string; symptom_code: string; issue_type: "crop" | "livestock"; subject_key: string | null;
+  center_lat: number; center_lng: number; radius_km: number; message: { en: string; sw: string };
+  status: "draft" | "sent"; recipient_count: number; created_by: string | null; created_at: string;
+};
+
+export function mapAlert(row: BackendAlert): OutbreakAlert {
+  return {
+    id: row.id, symptomCode: row.symptom_code, issueType: row.issue_type, subjectKey: row.subject_key ?? undefined,
+    centerLat: row.center_lat, centerLng: row.center_lng, radiusKm: row.radius_km, message: row.message,
+    createdAt: row.created_at, status: row.status, recipientCount: row.recipient_count, createdBy: row.created_by ?? "",
+  };
+}
+
+function draftBody(draft: AlertDraft): string {
+  return JSON.stringify({
+    symptom_code: draft.symptomCode, issue_type: draft.issueType, subject_key: draft.subjectKey ?? null,
+    center_lat: draft.centerLat, center_lng: draft.centerLng, radius_km: draft.radiusKm, message: draft.message,
+  });
+}
+
 const apiAdapter: OutbreakService = {
-  async getSignals() { throw new Error("Outbreak signal API adapter is not implemented until its backend contract is confirmed."); },
-  async listAlerts() { throw new Error("Outbreak alert API adapter is not implemented until its backend contract is confirmed."); },
-  async listAlertsNear() { throw new Error("Farmer alert feed API adapter is not implemented until its backend contract is confirmed."); },
-  async getThresholds() { throw new Error("Outbreak threshold API adapter is not implemented until its backend contract is confirmed."); },
-  async updateThresholds() { throw new Error("Outbreak threshold API adapter is not implemented until its backend contract is confirmed."); },
-  async previewAlert() { throw new Error("Alert recipient preview API adapter is not implemented until its backend contract is confirmed."); },
-  async sendAlert() { throw new Error("Alert sending API adapter is not implemented until its backend contract is confirmed."); },
+  async getSignals(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.symptomCode) params.set("symptom_code", filters.symptomCode);
+    if (filters.issueType) params.set("issue_type", filters.issueType);
+    if (filters.fromWeek) params.set("from_week", filters.fromWeek);
+    if (filters.throughWeek) params.set("through_week", filters.throughWeek);
+    const cells = await api<BackendCell[]>(`/admin/outbreak-signals${params.size ? `?${params}` : ""}`);
+    return cells.map((cell) => ({
+      cellId: cell.cell_id, centerLat: cell.center_lat, centerLng: cell.center_lng, count: cell.count,
+      bySymptom: cell.by_symptom, issueType: cell.issue_type, weekStart: cell.week_start, flagged: cell.flagged,
+    }));
+  },
+  async listAlerts() { return (await api<BackendAlert[]>("/admin/outbreak-alerts")).map(mapAlert); },
+  async listAlertsNear(pin) {
+    const query = `latitude=${pin.latitude}&longitude=${pin.longitude}`;
+    return (await farmerApi<BackendAlert[]>(`/outbreak-alerts/nearby?${query}`)).map(mapAlert);
+  },
+  async getThresholds() {
+    const row = await api<{ minimum_count: number; cell_size_deg: number }>("/admin/outbreak-thresholds");
+    return { minimumCount: row.minimum_count, cellSizeDeg: row.cell_size_deg };
+  },
+  async updateThresholds(value) {
+    const row = await api<{ minimum_count: number; cell_size_deg: number }>("/admin/outbreak-thresholds", {
+      method: "PATCH",
+      body: JSON.stringify({ minimum_count: value.minimumCount, cell_size_deg: value.cellSizeDeg }),
+    });
+    return { minimumCount: row.minimum_count, cellSizeDeg: row.cell_size_deg };
+  },
+  async previewAlert(draft) {
+    return (await api<{ recipient_count: number }>("/admin/outbreak-alerts/preview", { method: "POST", body: draftBody(draft) })).recipient_count;
+  },
+  async sendAlert(draft) {
+    return mapAlert(await api<BackendAlert>("/admin/outbreak-alerts", { method: "POST", body: draftBody(draft) }));
+  },
 };
 
 export const outbreakService = selectAdapter(getDataMode(), mockAdapter, apiAdapter);

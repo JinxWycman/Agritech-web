@@ -1,5 +1,38 @@
 # Backend contract register
 
+## Live API wiring update — 2026-10-19 (recommendation jobs, admin vendors, outbreaks)
+
+- Recommendations: `POST /recommendations/jobs` (202, `{job_id}`) and `GET /recommendations/jobs/{id}` (`queued|running|done|failed`, with `recommendation` and `sms` when done). The web client polls every 2 s for up to 2 minutes. `POST /recommendations/generate` still works synchronously.
+- Admin agrovets (platform admin writes, officers read): `GET/POST /admin/vendors`, `PATCH /admin/vendors/{id}`, `GET/POST /admin/vendors/{id}/products`, `PATCH/DELETE /admin/vendor-products/{id}`, `GET /admin/vendor-reports?days=` (ranking), `GET /admin/vendors/{id}/report?days=` (views, contacts by type, unique farmers, contact rate, daily series). New page `/admin/vendors`.
+- Outbreaks: `GET /admin/outbreak-signals` (expert-request reports in grid cells per week; cells with a single report are withheld), `GET/PATCH /admin/outbreak-thresholds`, `GET /admin/outbreak-alerts`, `POST /admin/outbreak-alerts/preview`, `POST /admin/outbreak-alerts` (inbox notification now, SMS after the response), `GET /outbreak-alerts/nearby`. Alerts expire after 30 days.
+- Expert requests now store `symptom_codes` and `urgency`; the symptom list is `src/lib/symptoms.ts`. Preferred time is still written into the description.
+- `GET /weather` adds `rainfall_normal_mm`, `rainfall_trend` (below/normal/above versus the 10-year normal for the same days) and `ndvi_trend_level`; the farmer risk screen uses these.
+- Still not provided: a backend risk-assessment endpoint (rules stay in the frontend and are SAMPLE rules pending agronomist review), expert offer accept/decline from the web, expert performance and service areas, per-market prices and price history.
+
+## Live API wiring update — 2026-10-19 (notifications, agrovets)
+
+- Notifications: list items carry `read`/`read_at` and the list returns `unread_count`; `GET /notifications/unread-count`, `PATCH /notifications/{id}/read` (idempotent), `POST /notifications/mark-all-read`. Dashboard unread badge now uses the unread count (it previously showed the total).
+- Agrovets: `GET /vendors?q=&county=&category=&product=&latitude=&longitude=&limit=&offset=` (sponsored first, then nearest), `GET /vendors/{id}`, `GET /vendors/{id}/products`, `POST /vendors/{id}/events` `{event: view|call|whatsapp|directions|contact}` returning `{views, contacts}`; repeat events from the same signed-in farmer within an hour count once.
+- Vendor rating is not collected yet, so `rating` is `null` and hidden. Opening hours are parsed from the vendor's text when possible; otherwise the text is shown and open/closed is omitted. Sponsored listings always show a "Sponsored" badge.
+- Not yet available: admin vendor management (sponsored/certified/WhatsApp/categories/products) and vendor-facing reports.
+
+## Live API wiring update — 2026-10-18 (profile, location, single sign-in)
+
+- Profile crops/livestock now sync to `GET/POST/DELETE /farmer-crops` (area, soil type, experience) and `/farmer-livestock` (herd size) using catalogue IDs from `GET /crops` and `GET /livestock`. There is no update route, so a changed entry is deleted and recreated.
+- Location: `GET /counties/locate?latitude=&longitude=` returns the nearest county and sub-county (centroid based, approximate) plus that sub-county's wards. Sign-up and profile use a County → Sub-county → Ward picker; `POST /farmers/register` accepts `constituency_id`, `ward_id`, `latitude`, `longitude`, and web sign-ups are marked `profile_complete`.
+- Device location was blocked by `Permissions-Policy: geolocation=()`; it is now `geolocation=(self)`.
+- Sign-in is one form: a numeric 4–7 digit secret tries farmer login, a non-numeric/8+ character secret tries staff login, and 8–10 digit secrets try farmer then staff. Demo personas moved behind a "Demo accounts" disclosure.
+
+## Live API wiring update — 2026-10-18 (weather, farmer requests, catalogues)
+
+Added together with matching backend routes in Agritech_Version2:
+
+- Farm conditions: `GET /weather` (signed-in farmer; location resolved server-side). Returns current conditions, `daily_forecast[]` (`date`, `condition`, `high_c`, `low_c`, `rainfall_mm`), `rainfall_mm_30d`, `rainfall_status`, `ndvi`, `vegetation_health`, `ndvi_trend`, `ndvi_change`. Rainfall/NDVI normals and below/normal/above trends are not provided, so those snapshot fields stay empty.
+- Farmer expert requests: `GET /farmers/me/expert-requests?status=&open=&limit=&offset=` (`items/total`), `GET /farmers/me/expert-requests/{id}`, `POST .../{id}/cancel`, `POST .../{id}/feedback` `{ solved }`. Expert phone is returned only for Accepted/Completed. Submission still uses `POST /expert-request`; symptoms, urgency and preferred time are folded into its description because the backend has no structured fields for them yet.
+- Dashboard open-request count uses `?open=true&limit=1`.
+- Catalogues: `GET /crops` and `GET /livestock` (`id`, `name`) are proxied. Profile crop/livestock saving is still not wired: `POST /farmer-crops` requires farm size, soil type and experience level, and `POST /farmer-livestock` requires herd size, which the profile screen does not collect.
+- Still not connected: expert offer accept/decline/complete from the web, admin reassignment, symptom catalogue, request settings.
+
 ## UI polish note — 2026-10-18
 
 The shared frontend shell and login presentation were visually refined without changing service contracts, API behavior, routes, or backend requirements. No new endpoint is needed for this work.

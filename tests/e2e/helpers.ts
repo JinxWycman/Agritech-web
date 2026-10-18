@@ -10,6 +10,8 @@ const demoLoginNames: Record<DemoPersona, string> = {
 
 export async function loginAs(page: Page, persona: DemoPersona) {
   await page.goto("/login");
+  // Demo personas sit behind a disclosure below the single sign-in form.
+  await page.getByText("Demo accounts", { exact: true }).click();
   await page.getByRole("button", { name: demoLoginNames[persona] }).click();
   const destination = persona === "farmer" ? "/app/" : persona === "expert" ? "/expert/" : "/admin/";
   await page.waitForURL((url) => url.pathname.startsWith(destination));
