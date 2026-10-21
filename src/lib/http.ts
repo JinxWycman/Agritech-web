@@ -5,12 +5,14 @@
  * with values: platform_admin and officer. These helpers keep the frontend
  * aligned with that contract without rewriting the server model names.
  */
-export const STAFF_ROLE_VALUES = ["platform_admin", "officer"] as const;
-export const STAFF_PROXY_PATHS = ["/staff/login", "/staff/refresh", "/staff/me", "/staff/logout"] as const;
+export const STAFF_ROLE_VALUES = ["platform_admin", "officer", "admin", "expert"] as const;
+export const STAFF_PROXY_PATHS = ["/auth/login", "/auth/refresh", "/auth/me"] as const;
 
 export const STAFF_ROLE_LABELS = {
   platform_admin: "Admin",
   officer: "Officer",
+  admin: "Admin",
+  expert: "Expert",
 } as const;
 
 export type StaffRoleName = (typeof STAFF_ROLE_VALUES)[number];

@@ -14,6 +14,7 @@ import type { Coordinates } from "@/lib/kenya-location";
 import { farmConditionsService, farmerProfileService, recommendationService, vendorService } from "@/services";
 import { getDataMode } from "@/lib/data-mode";
 import { pickLocalized, type Recommendation, type Vendor, type VendorWithDistance } from "@/types/business";
+import type { GeneratedLiveRecommendation, LiveRecommendation } from "@/services/contracts";
 
 type Locale = "en" | "sw";
 function localeOf(locale: string): Locale {
@@ -149,6 +150,86 @@ function RecommendationCard({ recommendation, locale }: { recommendation: Recomm
   );
 }
 
+type LiveRec = GeneratedLiveRecommendation["recommendation"];
+
+/** Saved recommendations store the structured result in recommendation_data (or, for older rows, as JSON text). */
+function asLiveRec(item: LiveRecommendation): LiveRec | null {
+  const isRec = (v: unknown): v is LiveRec => !!v && typeof v === "object" && typeof (v as LiveRec).primary?.name === "string";
+  if (isRec(item.recommendation_data)) return item.recommendation_data;
+  const nested = (item.recommendation_data as { recommendation?: unknown } | null)?.recommendation;
+  if (isRec(nested)) return nested;
+  try {
+    const parsed: unknown = JSON.parse(item.recommendation_text);
+    if (isRec(parsed)) return parsed;
+    if (isRec((parsed as { recommendation?: unknown })?.recommendation)) return (parsed as { recommendation: LiveRec }).recommendation;
+  } catch { /* plain text */ }
+  return null;
+}
+
+function LiveRecommendationBody({ rec, locale }: { rec: LiveRec; locale: Locale }) {
+  const t = useTranslations("business");
+  return (
+    <>
+            <header>
+              <p className="text-sm font-semibold uppercase tracking-wide text-forest-800">{rec.kind === "crop" ? t("kind.crop") : t("kind.breed")}</p>
+              <h2 className="mt-1 text-xl font-bold">{rec.primary.name}</h2>
+              {rec.primary.adapted_regions && <p className="text-sm text-[var(--muted)]">{rec.primary.adapted_regions}</p>}
+            </header>
+            <section>
+              <h3 className="font-semibold">{t("whySuggested")}</h3>
+              <p className="mt-1 text-sm">{rec.why_fit}</p>
+            </section>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {(rec.primary.maturity_days_min != null || rec.primary.maturity_days_max != null) && (
+                <section><h3 className="font-semibold">{t("maturityTitle")}</h3><p className="mt-1 text-sm">{[rec.primary.maturity_days_min, rec.primary.maturity_days_max].filter((v) => v != null).join("–")} {t("maturity.days", { amount: "" }).trim()}</p></section>
+              )}
+              {rec.spacing && (
+                <section><h3 className="font-semibold">{t("spacing")}</h3><p className="mt-1 text-sm">{rec.spacing}</p></section>
+              )}
+              {rec.planting_window && (
+                <section><h3 className="font-semibold">{t("plantingWindow")}</h3><p className="mt-1 text-sm">{rec.planting_window}</p></section>
+              )}
+            </div>
+            {rec.primary.risk_attributes && (
+              <section><h3 className="font-semibold">{t("risks")}</h3><p className="mt-1 text-sm">{rec.primary.risk_attributes}</p></section>
+            )}
+            {rec.alternatives.length > 0 && (
+              <section>
+                <h3 className="font-semibold">{t("alternatives")}</h3>
+                <ol className="mt-1 list-decimal space-y-1 pl-5 text-sm">{rec.alternatives.map((item, index) => (
+                  <li key={index}>
+                    <span className="font-medium">{item.name}</span>
+                    {item.adapted_regions && <span className="text-[var(--muted)]"> · {item.adapted_regions}</span>}
+                  </li>
+                ))}</ol>
+              </section>
+            )}
+            {rec.actions.length > 0 && (
+              <section>
+                <h3 className="font-semibold">{t("tips")}</h3>
+                <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">{rec.actions.map((action, index) => <li key={index}>{action}</li>)}</ul>
+              </section>
+            )}
+            {(rec.vendors ?? []).length > 0 && (
+              <section>
+                <h3 className="font-semibold">{t("nearbyVendors")}</h3>
+                <ul className="mt-2 space-y-2">{(rec.vendors ?? []).map((v, index) => (
+                  <li key={index} className="rounded-lg border border-[var(--border)] p-3">
+                    <p className="font-medium">{v.name}{v.county ? ` · ${v.county}` : ""}</p>
+                    {v.product && <p className="text-sm">{v.product}</p>}
+                    {v.price_kes != null && <p className="text-sm">{money(v.price_kes, locale)}{v.unit ? ` / ${v.unit}` : ""}</p>}
+                    {v.phone && <p className="text-sm">{t("phoneLabel")}: <a href={`tel:${toE164Kenya(v.phone)}`} className="underline">{v.phone}</a></p>}
+                    {v.address && <p className="text-sm text-[var(--muted)]">{v.address}</p>}
+                    {v.distance_km != null && <p className="text-sm text-[var(--muted)]">{v.distance_km.toFixed(1)} {t("kmAway")}</p>}
+                  </li>
+                ))}</ul>
+                {rec.vendor_note && <p className="mt-2 text-xs text-[var(--muted)]">{rec.vendor_note}</p>}
+              </section>
+            )}
+    </>
+  );
+}
+
 export function RecommendationScreen({ kind }: { kind: "crop" | "livestock" }) {
   const t = useTranslations("business");
   const locale = localeOf(useLocale());
@@ -192,62 +273,7 @@ export function RecommendationScreen({ kind }: { kind: "crop" | "livestock" }) {
         {generate.isError && <ErrorState onRetry={() => generate.mutate()} message={generate.error instanceof Error ? generate.error.message : t("loadError")} />}
         {generate.data && (
           <article className="panel space-y-4 p-4" aria-live="polite">
-            <header>
-              <p className="text-sm font-semibold uppercase tracking-wide text-forest-800">{generate.data.recommendation.kind === "crop" ? t("kind.crop") : t("kind.breed")}</p>
-              <h2 className="mt-1 text-xl font-bold">{generate.data.recommendation.primary.name}</h2>
-              {generate.data.recommendation.primary.adapted_regions && <p className="text-sm text-[var(--muted)]">{generate.data.recommendation.primary.adapted_regions}</p>}
-            </header>
-            <section>
-              <h3 className="font-semibold">{t("whySuggested")}</h3>
-              <p className="mt-1 text-sm">{generate.data.recommendation.why_fit}</p>
-            </section>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {(generate.data.recommendation.primary.maturity_days_min != null || generate.data.recommendation.primary.maturity_days_max != null) && (
-                <section><h3 className="font-semibold">{t("maturityTitle")}</h3><p className="mt-1 text-sm">{[generate.data.recommendation.primary.maturity_days_min, generate.data.recommendation.primary.maturity_days_max].filter((v) => v != null).join("–")} {t("maturity.days", { amount: "" }).trim()}</p></section>
-              )}
-              {generate.data.recommendation.spacing && (
-                <section><h3 className="font-semibold">{t("spacing")}</h3><p className="mt-1 text-sm">{generate.data.recommendation.spacing}</p></section>
-              )}
-              {generate.data.recommendation.planting_window && (
-                <section><h3 className="font-semibold">{t("plantingWindow")}</h3><p className="mt-1 text-sm">{generate.data.recommendation.planting_window}</p></section>
-              )}
-            </div>
-            {generate.data.recommendation.primary.risk_attributes && (
-              <section><h3 className="font-semibold">{t("risks")}</h3><p className="mt-1 text-sm">{generate.data.recommendation.primary.risk_attributes}</p></section>
-            )}
-            {generate.data.recommendation.alternatives.length > 0 && (
-              <section>
-                <h3 className="font-semibold">{t("alternatives")}</h3>
-                <ol className="mt-1 list-decimal space-y-1 pl-5 text-sm">{generate.data.recommendation.alternatives.map((item, index) => (
-                  <li key={index}>
-                    <span className="font-medium">{item.name}</span>
-                    {item.adapted_regions && <span className="text-[var(--muted)]"> · {item.adapted_regions}</span>}
-                  </li>
-                ))}</ol>
-              </section>
-            )}
-            {generate.data.recommendation.actions.length > 0 && (
-              <section>
-                <h3 className="font-semibold">{t("tips")}</h3>
-                <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">{generate.data.recommendation.actions.map((action, index) => <li key={index}>{action}</li>)}</ul>
-              </section>
-            )}
-            {(generate.data.recommendation.vendors ?? []).length > 0 && (
-              <section>
-                <h3 className="font-semibold">{t("nearbyVendors")}</h3>
-                <ul className="mt-2 space-y-2">{(generate.data.recommendation.vendors ?? []).map((v, index) => (
-                  <li key={index} className="rounded-lg border border-[var(--border)] p-3">
-                    <p className="font-medium">{v.name}{v.county ? ` · ${v.county}` : ""}</p>
-                    {v.product && <p className="text-sm">{v.product}</p>}
-                    {v.price_kes != null && <p className="text-sm">{money(v.price_kes, locale)}{v.unit ? ` / ${v.unit}` : ""}</p>}
-                    {v.phone && <p className="text-sm">{t("phoneLabel")}: <a href={`tel:${toE164Kenya(v.phone)}`} className="underline">{v.phone}</a></p>}
-                    {v.address && <p className="text-sm text-[var(--muted)]">{v.address}</p>}
-                    {v.distance_km != null && <p className="text-sm text-[var(--muted)]">{v.distance_km.toFixed(1)} {t("kmAway")}</p>}
-                  </li>
-                ))}</ul>
-                {generate.data.recommendation.vendor_note && <p className="mt-2 text-xs text-[var(--muted)]">{generate.data.recommendation.vendor_note}</p>}
-              </section>
-            )}
+            <LiveRecommendationBody rec={generate.data.recommendation} locale={locale} />
             <p className="rounded-lg bg-[var(--surface-muted)] p-3 text-sm">
               {generate.data.sms.status === "error"
                 ? generate.data.sms.reason ?? t("smsSubmissionFailed")
@@ -255,10 +281,12 @@ export function RecommendationScreen({ kind }: { kind: "crop" | "livestock" }) {
             </p>
           </article>
         )}
-        {queryData.saved.map((item) => (
+        {queryData.saved.filter((item) => !item.recommendation_type || item.recommendation_type.toLowerCase() === kind).map((item) => {
+          const rec = asLiveRec(item);
+          return (
           <article key={item.id} className="panel space-y-3 p-4">
-            <h2 className="font-bold">{item.title}</h2>
-            <p className="whitespace-pre-wrap text-sm">{item.recommendation_text}</p>
+            {rec ? <LiveRecommendationBody rec={rec} locale={locale} /> : <><h2 className="font-bold">{item.title}</h2>
+            <p className="whitespace-pre-wrap text-sm">{item.recommendation_text}</p></>}
             {item.sms_deliveries.length > 0 && (
               <ul className="space-y-1">{item.sms_deliveries.map((delivery, index) => (
                 <li key={`${delivery.submitted_at}-${index}`} className="rounded bg-[var(--surface-muted)] px-3 py-2 text-xs">
@@ -268,7 +296,8 @@ export function RecommendationScreen({ kind }: { kind: "crop" | "livestock" }) {
               ))}</ul>
             )}
           </article>
-        ))}
+          );
+        })}
       </section>}
       {!recommendations.length
         ? <EmptyState title={t("recommendationsEmptyTitle")} text={t("recommendationsEmptyText")} />

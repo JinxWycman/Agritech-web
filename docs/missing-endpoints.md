@@ -47,7 +47,7 @@ The specification confirms product capabilities and selected business rules, not
 
 ## A. Decisions before connecting
 
-1. Authentication paths to confirm: current farmer login calls `POST /auth/login` with `{ phone_number, pin }`; current staff login calls `POST /staff/login` with `{ phone_number, password }`. Confirm these legacy paths, payloads, response schemas, and whether the spec's `POST /auth` is intended instead.
+1. Authentication (confirmed against the Agritech_Version2 OpenAPI, 2026-10-21): every role signs in with `POST /auth/login` `{ phone_number, pin }`, refreshes with `POST /auth/refresh` `{ refresh_token }`, and identifies with `GET /auth/me`. Roles seen: farmer, expert/officer, platform_admin/admin. There is no logout endpoint; the client clears its session.
 2. Token transport, storage boundary, refresh rotation, expiry, logout, and cookie flags.
 3. Backend role names and permissions. Frontend maps `officer` to `expert` and `platform_admin` to `admin` in `src/services/adapters/api.ts`; confirm both source roles and mapping.
 4. This website uses a same-origin Next.js `/backend` proxy configured with server-only `API_URL`. Browser CORS is avoided. If a client calls FastAPI directly, configure the backend's `CORS_ORIGINS` environment variable with that client's exact origin; do not use `*` with credentials.
@@ -123,8 +123,8 @@ These calls were retained to preserve existing behavior. They are not confirmed 
 |---|---|---|
 | Farmer login | `POST /auth/login` with `{ phone_number, pin }` | Legacy-existing; spec lists `POST /auth`, path/payload unconfirmed |
 | Farmer dashboard/profile baseline | `GET /farmers/me` | Live wiring added; response fields are mapped to the frontend profile model |
-| Staff login/session | `POST /staff/login`, `POST /staff/refresh`, `POST /staff/logout` | Legacy-existing; contract unconfirmed |
-| Staff identity/session bootstrap | `GET /staff/me` | Legacy-existing; contract unconfirmed |
+| Staff login/session | `POST /auth/login`, `POST /auth/refresh` | Confirmed; replaces legacy `/staff/*` |
+| Staff identity/session bootstrap | `GET /auth/me` | Confirmed |
 | Admin overview | `GET /admin/overview` | Legacy-existing; response mapping unconfirmed |
 | Expert queue summary | `GET /admin/expert-requests?status=Pending|Accepted|Completed&limit=6&offset=0` | Live wiring added; endpoint is staff-scoped and returns `PageRequests`; confirm field mapping |
 | Expert lookup | `GET /experts?is_available=true&limit=50&offset=0` | Legacy-existing; filters/mapping unconfirmed |

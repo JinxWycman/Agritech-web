@@ -104,6 +104,8 @@ Statuses: **built** = mock-first and works in demo mode; **legacy** = older back
 
 ## Phase log
 
+- 2026-10-21 auth alignment with Agritech_Version2: staff/expert/admin sign-in now uses the unified `POST /auth/login`, refresh uses `POST /auth/refresh` with the refresh token (kept in sessionStorage, like farmers), and the legacy shell reads `GET /auth/me`; the nonexistent `/staff/*` calls were removed from the client. Other endpoints were checked against the backend OpenAPI and already match.
+
 - 2026-10-19 recommendation jobs (polling), admin agrovet management and engagement reports (`/admin/vendors`, chart colours validated for colour-blind separation via `--series-1/2`), live outbreak console and farmer alert feed, structured symptoms, rainfall/NDVI trend inputs for risk rules.
 
 - 2026-10-19 notifications read state and live agrovet directory/profile/products/events; sponsored badge, price-on-request and unknown stock states; stock/certification labels no longer say "sample". New Kiswahili strings need review.

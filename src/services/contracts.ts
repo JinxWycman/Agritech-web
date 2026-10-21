@@ -103,7 +103,7 @@ export type RecommendationService = {
   ): Promise<{ zone: AgroZone; recommendations: Recommendation[] } | null>;
 };
 export type LiveRecommendation = {
-  id: string; title: string; recommendation_text: string; recommendation_data: Record<string, unknown> | null;
+  id: string; recommendation_type?: string; title: string; recommendation_text: string; recommendation_data: Record<string, unknown> | null;
   is_sent: boolean; sms_deliveries: { status: string; failure_reason: string | null; submitted_at: string; delivered_at: string | null }[];
 };
 export type GeneratedRecommendationPrimary = {

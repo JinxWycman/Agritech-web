@@ -22,6 +22,9 @@ const FARMER_PATHS = new Set([
   "/experts/",
   "/expert-request",
   "/expert-request/status",
+  "/experts/me",
+  "/experts/me/requests",
+  "/experts/me/availability",
   "/farmer-crops",
   "/farmer-crops/",
   "/farmer-livestock",
@@ -74,6 +77,7 @@ export function allowedBackendPath(segments: string[]): string | null {
   if (/^\/counties\/constituencies\/[0-9a-f-]+\/wards$/i.test(path)) return path;
   if (/^\/farmers\/me\/expert-requests\/[0-9a-f-]+(?:\/(?:cancel|feedback))?$/i.test(path)) return path;
   if (/^\/vendors\/[0-9a-f-]+(?:\/(?:products|events))?$/i.test(path)) return path;
+  if (/^\/experts\/me\/requests\/[0-9a-f-]+$/i.test(path)) return path;
   if (/^\/notifications\/[0-9a-f-]+\/read$/i.test(path)) return path;
   if (/^\/farmer-crops\/[0-9a-f-]+$/i.test(path)) return path;
   if (/^\/farmer-livestock\/[0-9a-f-]+$/i.test(path)) return path;
@@ -103,7 +107,8 @@ export function allowedBackendMethod(method: string, path: string): boolean {
   if (/^\/farmers\/me\/expert-requests\/[0-9a-f-]+\/(?:cancel|feedback)$/i.test(path)) return verb === "POST";
   if (path === "/farmers/me") return ["GET", "PUT", "DELETE"].includes(verb);
   if (path === "/farmers/change-pin") return verb === "PUT";
-  if (path === "/staff/me") return verb === "GET";
+  if (path === "/staff/me" || path === "/experts/me" || path === "/experts/me/requests") return verb === "GET";
+  if (path === "/experts/me/availability" || /^\/experts\/me\/requests\/[0-9a-f-]+$/i.test(path)) return verb === "PATCH";
   if (path === "/expert-request/status") return verb === "PATCH";
   if (/^\/(?:farmer-crops|farmer-livestock)\/[0-9a-f-]+$/i.test(path)) return verb === "DELETE";
   if (/^\/recommendations\/[0-9a-f-]+\/sms$/i.test(path)) return verb === "POST";

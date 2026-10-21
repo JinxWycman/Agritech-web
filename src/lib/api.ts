@@ -27,6 +27,14 @@ let refreshInFlight: Promise<string | null> | null = null;
 let farmerRefreshInFlight: Promise<string | null> | null = null;
 
 const FARMER_REFRESH_KEY = "agritech_farmer_refresh";
+const STAFF_ACCESS_KEY = "agritech_staff_session_access";
+const STAFF_REFRESH_KEY = "agritech_staff_session_refresh";
+let staffRefreshToken: string | null = null;
+
+function getStaffRefreshToken(): string | null {
+  if (!staffRefreshToken && typeof window !== "undefined") staffRefreshToken = sessionStorage.getItem(STAFF_REFRESH_KEY);
+  return staffRefreshToken;
+}
 
 function forgetLegacyStorage() {
   if (typeof window === "undefined") return;
@@ -35,6 +43,7 @@ function forgetLegacyStorage() {
 }
 
 export function getAccessToken(): string | null {
+  if (!accessToken && typeof window !== "undefined") accessToken = sessionStorage.getItem(STAFF_ACCESS_KEY);
   return accessToken;
 }
 
@@ -54,11 +63,18 @@ function writeRoleCookie(role: string) {
   document.cookie = "staff_role=" + encodeURIComponent(role) + "; Path=/; Max-Age=" + String(60 * 60 * 24 * 14) + "; SameSite=Lax" + secure;
 }
 
-export function setSession(nextAccessToken: string, role: string) {
+export function setSession(nextAccessToken: string, role: string, nextRefreshToken?: string) {
   if (!isStaffRole(role)) return;
   accessToken = nextAccessToken;
+  if (typeof window !== "undefined") {
+    sessionStorage.setItem(STAFF_ACCESS_KEY, nextAccessToken);
+    if (nextRefreshToken) {
+      staffRefreshToken = nextRefreshToken;
+      sessionStorage.setItem(STAFF_REFRESH_KEY, nextRefreshToken);
+    }
+  }
   writeRoleCookie(role);
-  writePortalRoleCookie(role === "platform_admin" ? "admin" : "expert");
+  writePortalRoleCookie(role === "platform_admin" || role === "admin" ? "admin" : "expert");
 }
 
 export function setFarmerSession(nextAccessToken: string, nextRefreshToken?: string) {
@@ -86,8 +102,11 @@ function writePortalRoleCookie(role: string) {
 
 export function clearSession() {
   accessToken = null;
+  staffRefreshToken = null;
   forgetLegacyStorage();
   if (typeof window === "undefined") return;
+  sessionStorage.removeItem(STAFF_ACCESS_KEY);
+  sessionStorage.removeItem(STAFF_REFRESH_KEY);
   const secure = window.location.protocol === "https:" ? "; Secure" : "";
   document.cookie = "staff_role=; Path=/; Max-Age=0; SameSite=Lax" + secure;
   document.cookie = "portal_role=; Path=/; Max-Age=0; SameSite=Lax" + secure;
@@ -139,20 +158,23 @@ async function timedFetch(url: string, init: RequestInit): Promise<Response> {
 async function refreshAccess(): Promise<string | null> {
   if (refreshInFlight) return refreshInFlight;
   refreshInFlight = (async () => {
+    const token = getStaffRefreshToken();
+    if (!token) return null;
     let response: Response;
     try {
-      response = await timedFetch(PROXY + "/staff/refresh", {
+      response = await timedFetch(PROXY + "/auth/refresh", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ refresh_token: token }),
       });
     } catch {
       return null;
     }
     if (!response.ok) return null;
-    const data = (await response.json()) as { access_token?: string; role?: string };
-    if (!data.access_token || !isStaffRole(data.role)) return null;
-    setSession(data.access_token, data.role);
+    const data = (await response.json()) as { access_token?: string; refresh_token?: string; role?: string };
+    const role = data.role ?? getCookie("staff_role");
+    if (!data.access_token || !isStaffRole(role)) return null;
+    setSession(data.access_token, role, data.refresh_token);
     return data.access_token;
   })().finally(() => {
     refreshInFlight = null;
@@ -162,7 +184,7 @@ async function refreshAccess(): Promise<string | null> {
 
 export async function bootstrapSession(): Promise<string | null> {
   forgetLegacyStorage();
-  if (accessToken) return accessToken;
+  if (getAccessToken()) return accessToken;
   if (typeof window !== "undefined" && !getCookie("staff_role")) return null;
   return refreshAccess();
 }
@@ -190,7 +212,7 @@ export async function api<T>(path: string, options: RequestInit = {}, retried = 
     throw new ApiError(OFFLINE_MESSAGE, 0);
   }
 
-  if (response.status === 401 && !retried && path !== "/staff/refresh") {
+  if (response.status === 401 && !retried && path !== "/auth/refresh") {
     const next = await refreshAccess();
     if (next) return api<T>(path, options, true);
     expireSession();
@@ -206,39 +228,10 @@ export async function api<T>(path: string, options: RequestInit = {}, retried = 
   return response.json() as Promise<T>;
 }
 
-export async function loginStaff(phone_number: string, password: string) {
-  let response: Response;
-  try {
-    response = await timedFetch(PROXY + "/staff/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone_number, password }),
-    });
-  } catch (error) {
-    if (error instanceof ApiError) throw error;
-    throw new ApiError(OFFLINE_MESSAGE, 0);
-  }
-  if (!response.ok) {
-    throw new ApiError(await readDetail(response, "Login failed"), response.status);
-  }
-  const data = (await response.json()) as { access_token: string; role: string };
-  if (!isStaffRole(data.role) || !data.access_token) {
-    throw new ApiError("This account cannot open the staff console.", 403);
-  }
-  setSession(data.access_token, data.role);
-  return data;
-}
+type AuthTokens = { access_token?: string; refresh_token?: string; token_type?: string; expires_in?: number; role?: string; user_id?: string };
 
-export async function logoutStaff() {
-  try {
-    await timedFetch(PROXY + "/staff/logout", { method: "POST" });
-  } catch {
-    /* still clear the local session */
-  }
-  clearSession();
-}
-
-export async function loginFarmer(phone_number: string, pin: string) {
+/** One role-based sign-in (POST /auth/login) for farmers, experts and admins. */
+async function authenticate(phone_number: string, pin: string): Promise<AuthTokens & { access_token: string; role: string }> {
   let response: Response;
   try {
     response = await timedFetch(PROXY + "/auth/login", {
@@ -250,18 +243,28 @@ export async function loginFarmer(phone_number: string, pin: string) {
     if (error instanceof ApiError) throw error;
     throw new ApiError(OFFLINE_MESSAGE, 0);
   }
-
   if (!response.ok) {
     throw new ApiError(await readDetail(response, "Login failed"), response.status);
   }
-
-  const data = (await response.json()) as { access_token?: string; refresh_token?: string; token_type?: string; expires_in?: number; role?: string };
-  if (!data.access_token) {
-    throw new ApiError("This account cannot open the farmer portal.", 403);
+  const data = (await response.json()) as AuthTokens;
+  if (!data.access_token || !data.role) throw new ApiError("This account cannot sign in.", 403);
+  if (data.role === "farmer") {
+    clearSession();
+    setFarmerSession(data.access_token, data.refresh_token);
+  } else if (isStaffRole(data.role)) {
+    clearFarmerSession();
+    setSession(data.access_token, data.role, data.refresh_token);
+  } else {
+    throw new ApiError("This account cannot open the portal.", 403);
   }
+  return data as AuthTokens & { access_token: string; role: string };
+}
 
-  setFarmerSession(data.access_token, data.refresh_token);
-  return data;
+export const loginStaff = authenticate;
+export const loginFarmer = authenticate;
+
+export async function logoutStaff() {
+  clearSession();
 }
 
 export type County = { id: string; name: string; latitude: number; longitude: number };

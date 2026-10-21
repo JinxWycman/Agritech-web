@@ -6,6 +6,7 @@ import {
   getSavedRecommendations,
   generateRecommendation,
   getAccessToken,
+  getStaffRole,
   getFarmerAccessToken,
   loginFarmer,
   loginStaff,
@@ -21,19 +22,24 @@ import type { AdminSummary, Expert, ExpertQueueSummary, FarmerDashboardSummary }
 import type { AuthService, AdminSummaryService, ExpertRequestService, ExpertsService, FarmerService, LifecycleExpertRequestService, LifecycleExpertsService, RecommendationService, RequestSettingsService, SymptomsService, VendorService } from "@/services/contracts";
 
 export function mapBackendStaffRole(role: string): "admin" | "expert" {
-  if (role === "platform_admin") return "admin";
-  if (role === "officer") return "expert";
+  if (role === "platform_admin" || role === "admin") return "admin";
+  if (role === "officer" || role === "expert") return "expert";
   throw new ApiError("This account cannot open the staff portal.", 403);
 }
 
 export const apiAuthService: AuthService = {
   async loginFarmer(phone, pin) {
-    await loginFarmer(phone, pin);
+    const result = await loginFarmer(phone, pin);
+    if (result.role !== "farmer") return { role: mapBackendStaffRole(result.role) };
     document.cookie = "farmer_role=farmer; Path=/; SameSite=Lax";
     return { role: "farmer" };
   },
   async loginStaff(phone, password) {
     const result = await loginStaff(phone, password);
+    if (result.role === "farmer") {
+      document.cookie = "farmer_role=farmer; Path=/; SameSite=Lax";
+      return { role: "farmer" };
+    }
     return { role: mapBackendStaffRole(result.role) };
   },
   async continueAs() {
@@ -92,6 +98,14 @@ export const apiAdminSummaryService: AdminSummaryService = {
 export const apiExpertRequestService: ExpertRequestService = {
   async getQueueSummary(): Promise<ExpertQueueSummary> {
     type BackendRequest = { id: string; status: "Pending" | "Accepted" | "Completed"; issue_type: string; farmer_id: string };
+    if (!isAdminRole()) {
+      const [offered, accepted, completed] = await Promise.all([expertRequests("Offered"), expertRequests("Accepted"), expertRequests("Completed")]);
+      return {
+        pending: offered.slice(0, 6).map((row) => ({ id: row.id, status: "Pending" as const, issueType: row.issueType })),
+        accepted: accepted.slice(0, 6).map((row) => ({ id: row.id, status: "Accepted" as const, issueType: row.issueType })),
+        completed: completed.length,
+      };
+    }
     const [pending, accepted, completed] = await Promise.all([
       api<Page<BackendRequest>>("/admin/expert-requests?status=Pending&limit=6&offset=0"),
       api<Page<BackendRequest>>("/admin/expert-requests?status=Accepted&limit=6&offset=0"),
@@ -188,6 +202,38 @@ export function mapFarmerRequest(row: BackendFarmerRequest): ExpertRequestRecord
   };
 }
 
+type BackendAdminRequest = Omit<BackendFarmerRequest, "request_code" | "farmer_resolution" | "expert"> & {
+  expert_id: string | null; farmer_name?: string | null; farmer_phone?: string | null; county_name?: string | null; expert_name?: string | null;
+  request_code?: string; farmer_resolution?: string | null;
+};
+
+function mapAdminRequest(row: BackendAdminRequest): ExpertRequestRecord {
+  const base = mapFarmerRequest({ ...row, request_code: row.request_code ?? row.id.slice(0, 8).toUpperCase(), farmer_resolution: row.farmer_resolution ?? null, expert: null });
+  return { ...base, farmerName: row.farmer_name ?? "", farmerPhone: row.farmer_phone ?? "", farmerCounty: row.county_name ?? "" };
+}
+
+function isAdminRole(): boolean {
+  const role = getStaffRole();
+  return role === "platform_admin" || role === "admin";
+}
+
+type ExpertStatus = "Offered" | "Accepted" | "Completed" | "Escalated" | "Unassigned";
+
+async function expertRequests(status?: ExpertStatus): Promise<ExpertRequestRecord[]> {
+  const query = new URLSearchParams({ limit: "100", offset: "0" });
+  if (status) query.set("status", status);
+  const rows = await api<BackendFarmerRequest[]>(`/experts/me/requests?${query.toString()}`);
+  return rows.map((row) => mapFarmerRequest({ ...row, expert: null }));
+}
+
+async function updateExpertRequest(id: string, status: ExpertStatus): Promise<ExpertRequestRecord> {
+  const row = await api<BackendFarmerRequest>(`/experts/me/requests/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ request_id: id, status }),
+  });
+  return mapFarmerRequest({ ...row, expert: null });
+}
+
 const FARMER_REQUESTS = "/farmers/me/expert-requests";
 
 export const apiLifecycleExpertRequestService: LifecycleExpertRequestService = {
@@ -195,9 +241,12 @@ export const apiLifecycleExpertRequestService: LifecycleExpertRequestService = {
     const page = await farmerApi<Page<BackendFarmerRequest>>(`${FARMER_REQUESTS}?limit=100&offset=0`);
     return page.items.map(mapFarmerRequest);
   },
-  async listOffers() { return lifecycleNotImplemented("Expert offers"); },
-  async listCases() { return lifecycleNotImplemented("Expert cases"); },
-  async listAll() { return lifecycleNotImplemented("Admin expert-request board"); },
+  async listOffers() { return expertRequests("Offered"); },
+  async listCases() { return expertRequests(); },
+  async listAll() {
+    const page = await api<Page<BackendAdminRequest>>("/admin/expert-requests?limit=100&offset=0");
+    return page.items.map(mapAdminRequest);
+  },
   async getForFarmer(id) {
     try {
       return mapFarmerRequest(await farmerApi<BackendFarmerRequest>(`${FARMER_REQUESTS}/${encodeURIComponent(id)}`));
@@ -206,8 +255,17 @@ export const apiLifecycleExpertRequestService: LifecycleExpertRequestService = {
       throw error;
     }
   },
-  async getForExpert() { return lifecycleNotImplemented("Expert case details"); },
-  async getForAdmin() { return lifecycleNotImplemented("Admin expert-request details"); },
+  async getForExpert(id) {
+    return (await expertRequests()).find((row) => row.id === id) ?? null;
+  },
+  async getForAdmin(id) {
+    try {
+      return mapAdminRequest(await api<BackendAdminRequest>(`/admin/expert-requests/${encodeURIComponent(id)}`));
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) return null;
+      throw error;
+    }
+  },
   async submit(input) {
     // Symptoms and urgency are structured (they feed outbreak signals); the
     // preferred time has no field yet, so it stays readable in the description.
@@ -221,50 +279,56 @@ export const apiLifecycleExpertRequestService: LifecycleExpertRequestService = {
     });
     return { ...mapFarmerRequest({ ...created, expert: null }), preferredTime: input.preferredTime };
   },
-  async accept() { return lifecycleNotImplemented("Expert offer acceptance"); },
-  async decline() { return lifecycleNotImplemented("Expert offer decline"); },
+  async accept(id) { return updateExpertRequest(id, "Accepted"); },
+  async decline(id) { return updateExpertRequest(id, "Unassigned"); },
   async cancel(id) {
     return mapFarmerRequest(await farmerApi<BackendFarmerRequest>(`${FARMER_REQUESTS}/${encodeURIComponent(id)}/cancel`, { method: "POST" }));
   },
-  async complete() { return lifecycleNotImplemented("Expert case completion"); },
-  async escalate() { return lifecycleNotImplemented("Expert case escalation"); },
+  async complete(id) { return updateExpertRequest(id, "Completed"); },
+  async escalate(id) { return updateExpertRequest(id, "Escalated"); },
   async saveFeedback(id, _farmerId, solved) {
     return mapFarmerRequest(await farmerApi<BackendFarmerRequest>(`${FARMER_REQUESTS}/${encodeURIComponent(id)}/feedback`, {
       method: "POST",
       body: JSON.stringify({ solved }),
     }));
   },
-  async reassign() { return lifecycleNotImplemented("Admin expert reassignment"); },
-  async scoreCandidates() { return lifecycleNotImplemented("Expert assignment scoring"); },
+  async reassign(id, expertId) {
+    await api(`/admin/expert-requests/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify({ expert_id: expertId }) });
+    const row = await api<BackendAdminRequest>(`/admin/expert-requests/${encodeURIComponent(id)}`);
+    return mapAdminRequest(row);
+  },
+  async scoreCandidates() { return []; }, // Assignment scoring is backend-owned; no endpoint exposes it.
 };
 
+type BackendExpert = {
+  id: string; full_name: string; phone_number: string; expert_type: string; county_id: string; organization: string; is_available: boolean;
+};
+
+function mapExpert(row: BackendExpert, id = row.id): Expert {
+  return {
+    id, name: row.full_name, phone: row.phone_number, expertType: row.expert_type,
+    county: row.county_id, organization: row.organization, available: row.is_available,
+  };
+}
+
+/** An expert's own record is addressed as "me"; the backend resolves it from the token. */
+const OWN_EXPERT_ID = "me";
+
 export const apiLifecycleExpertsService: LifecycleExpertsService = {
-  async listAll() { return apiExpertsService.listAvailable(); },
+  async listAll() {
+    if (isAdminRole()) return apiExpertsService.listAvailable();
+    return [mapExpert(await api<BackendExpert>("/experts/me"), OWN_EXPERT_ID)];
+  },
   async setAvailability(_expertId, available) {
-    const row = await api<{
-      id: string;
-      full_name: string;
-      phone_number: string;
-      expert_type: string;
-      county_id: string;
-      organization: string;
-      is_available: boolean;
-    }>("/admin/me/availability", {
+    const admin = isAdminRole();
+    const row = await api<BackendExpert>(admin ? "/admin/me/availability" : "/experts/me/availability", {
       method: "PATCH",
       body: JSON.stringify({ is_available: available }),
     });
-    return {
-      id: row.id,
-      name: row.full_name,
-      phone: row.phone_number,
-      expertType: row.expert_type,
-      county: row.county_id,
-      organization: row.organization,
-      available: row.is_available,
-    };
+    return mapExpert(row, admin ? row.id : OWN_EXPERT_ID);
   },
-  getActingExpertId() { return lifecycleNotImplemented("Demo expert selection"); },
-  setActingExpertId() { return lifecycleNotImplemented("Demo expert selection"); },
+  getActingExpertId() { return OWN_EXPERT_ID; },
+  setActingExpertId() { /* the signed-in expert is the acting expert */ },
 };
 
 export const apiSymptomsService: SymptomsService = {

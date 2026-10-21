@@ -135,7 +135,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [online, setOnline] = useState(true);
   const session = useQuery({
     queryKey: ["staff-me"],
-    queryFn: () => api<{ role: string }>("/staff/me"),
+    queryFn: () => api<{ role: string }>("/auth/me"),
     staleTime: 5 * 60_000,
   });
   useEffect(() => {
