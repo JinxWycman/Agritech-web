@@ -106,8 +106,34 @@ export type LiveRecommendation = {
   id: string; title: string; recommendation_text: string; recommendation_data: Record<string, unknown> | null;
   is_sent: boolean; sms_deliveries: { status: string; failure_reason: string | null; submitted_at: string; delivered_at: string | null }[];
 };
+export type GeneratedRecommendationPrimary = {
+  id?: string; name: string; crop?: string; livestock?: string;
+  altitude_min_m?: number | null; altitude_max_m?: number | null;
+  rainfall_min_mm?: number | null; rainfall_max_mm?: number | null;
+  maturity_days_min?: number | null; maturity_days_max?: number | null;
+  risk_attributes?: string | null; adapted_regions?: string | null;
+};
+export type GeneratedRecommendationAlternative = {
+  id?: string; name: string; crop?: string; livestock?: string;
+  adapted_regions?: string | null; risk_attributes?: string | null;
+};
+export type GeneratedRecommendationVendor = {
+  vendor_id?: string; product_id?: string; name: string; county?: string | null;
+  address?: string | null; phone?: string | null; product?: string | null;
+  price_kes?: number | null; unit?: string | null; distance_km?: number | null;
+};
 export type GeneratedLiveRecommendation = {
-  recommendation: { id: string; kind: string; primary: { name: string; crop?: string; livestock?: string }; why_fit: string; alternatives: { name: string; crop?: string; livestock?: string }[]; actions: string[] };
+  recommendation: {
+    id?: string; kind: string;
+    primary: GeneratedRecommendationPrimary;
+    why_fit: string;
+    alternatives: GeneratedRecommendationAlternative[];
+    actions: string[];
+    vendors?: GeneratedRecommendationVendor[];
+    vendor_note?: string | null;
+    planting_window?: string | null;
+    spacing?: string | null;
+  };
   sms: { status: string; reason?: string };
 };
 

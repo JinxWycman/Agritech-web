@@ -195,21 +195,57 @@ export function RecommendationScreen({ kind }: { kind: "crop" | "livestock" }) {
             <header>
               <p className="text-sm font-semibold uppercase tracking-wide text-forest-800">{generate.data.recommendation.kind === "crop" ? t("kind.crop") : t("kind.breed")}</p>
               <h2 className="mt-1 text-xl font-bold">{generate.data.recommendation.primary.name}</h2>
+              {generate.data.recommendation.primary.adapted_regions && <p className="text-sm text-[var(--muted)]">{generate.data.recommendation.primary.adapted_regions}</p>}
             </header>
             <section>
               <h3 className="font-semibold">{t("whySuggested")}</h3>
               <p className="mt-1 text-sm">{generate.data.recommendation.why_fit}</p>
             </section>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {(generate.data.recommendation.primary.maturity_days_min != null || generate.data.recommendation.primary.maturity_days_max != null) && (
+                <section><h3 className="font-semibold">{t("maturityTitle")}</h3><p className="mt-1 text-sm">{[generate.data.recommendation.primary.maturity_days_min, generate.data.recommendation.primary.maturity_days_max].filter((v) => v != null).join("–")} {t("maturity.days", { amount: "" }).trim()}</p></section>
+              )}
+              {generate.data.recommendation.spacing && (
+                <section><h3 className="font-semibold">{t("spacing")}</h3><p className="mt-1 text-sm">{generate.data.recommendation.spacing}</p></section>
+              )}
+              {generate.data.recommendation.planting_window && (
+                <section><h3 className="font-semibold">{t("plantingWindow")}</h3><p className="mt-1 text-sm">{generate.data.recommendation.planting_window}</p></section>
+              )}
+            </div>
+            {generate.data.recommendation.primary.risk_attributes && (
+              <section><h3 className="font-semibold">{t("risks")}</h3><p className="mt-1 text-sm">{generate.data.recommendation.primary.risk_attributes}</p></section>
+            )}
             {generate.data.recommendation.alternatives.length > 0 && (
               <section>
                 <h3 className="font-semibold">{t("alternatives")}</h3>
-                <ol className="mt-1 list-decimal space-y-1 pl-5 text-sm">{generate.data.recommendation.alternatives.map((item, index) => <li key={index}>{t("rankedItem", { rank: index + 1, name: item.name })}</li>)}</ol>
+                <ol className="mt-1 list-decimal space-y-1 pl-5 text-sm">{generate.data.recommendation.alternatives.map((item, index) => (
+                  <li key={index}>
+                    <span className="font-medium">{item.name}</span>
+                    {item.adapted_regions && <span className="text-[var(--muted)]"> · {item.adapted_regions}</span>}
+                  </li>
+                ))}</ol>
               </section>
             )}
             {generate.data.recommendation.actions.length > 0 && (
               <section>
                 <h3 className="font-semibold">{t("tips")}</h3>
                 <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">{generate.data.recommendation.actions.map((action, index) => <li key={index}>{action}</li>)}</ul>
+              </section>
+            )}
+            {(generate.data.recommendation.vendors ?? []).length > 0 && (
+              <section>
+                <h3 className="font-semibold">{t("nearbyVendors")}</h3>
+                <ul className="mt-2 space-y-2">{(generate.data.recommendation.vendors ?? []).map((v, index) => (
+                  <li key={index} className="rounded-lg border border-[var(--border)] p-3">
+                    <p className="font-medium">{v.name}{v.county ? ` · ${v.county}` : ""}</p>
+                    {v.product && <p className="text-sm">{v.product}</p>}
+                    {v.price_kes != null && <p className="text-sm">{money(v.price_kes, locale)}{v.unit ? ` / ${v.unit}` : ""}</p>}
+                    {v.phone && <p className="text-sm">{t("phoneLabel")}: <a href={`tel:${toE164Kenya(v.phone)}`} className="underline">{v.phone}</a></p>}
+                    {v.address && <p className="text-sm text-[var(--muted)]">{v.address}</p>}
+                    {v.distance_km != null && <p className="text-sm text-[var(--muted)]">{v.distance_km.toFixed(1)} {t("kmAway")}</p>}
+                  </li>
+                ))}</ul>
+                {generate.data.recommendation.vendor_note && <p className="mt-2 text-xs text-[var(--muted)]">{generate.data.recommendation.vendor_note}</p>}
               </section>
             )}
             <p className="rounded-lg bg-[var(--surface-muted)] p-3 text-sm">
