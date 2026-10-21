@@ -84,6 +84,7 @@ export function FarmerRiskScreen() {
 
 function CellSummary({ cell, selected, onClick }: { cell: SignalCell; selected: boolean; onClick: () => void }) {
   const t = useTranslations("outbreak");
+  const locale = localeKey(useLocale());
   const symptom = Object.entries(cell.bySymptom).sort((left, right) => right[1] - left[1])[0]?.[0] ?? "unknown";
   return <li><button type="button" aria-pressed={selected} onClick={onClick} className={`w-full rounded-xl border p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest-600 ${cell.flagged ? "border-red-700" : "border-[var(--border)]"} ${selected ? "bg-[var(--surface-muted)]" : ""}`}>
     <span className="font-semibold">{cell.count} {t("reports")}{cell.flagged ? ` · ${t("flagged")}` : ""}</span>
