@@ -30,6 +30,13 @@ const HOP = new Set([
   "content-encoding",
 ]);
 
+// FastAPI serves these collections at "/name/"; Next.js strips the trailing slash
+// before this handler runs, so restore it to avoid a 307 round trip per call.
+const SLASH_COLLECTIONS = new Set([
+  "/farmer-crops", "/farmer-livestock", "/experts", "/farmers", "/notifications",
+  "/market-prices", "/advisories", "/products", "/recommendations",
+]);
+
 type RouteContext = { params: Promise<{ path: string[] }> };
 
 async function proxy(request: NextRequest, context: RouteContext) {
@@ -43,7 +50,8 @@ async function proxy(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ detail: "Not found." }, { status: 404 });
   }
 
-  const target = `${UPSTREAM}${allowed}${request.nextUrl.search}`;
+  const upstreamPath = SLASH_COLLECTIONS.has(allowed) ? `${allowed}/` : allowed;
+  const target = `${UPSTREAM}${upstreamPath}${request.nextUrl.search}`;
   const headers = new Headers();
   const authorization = request.headers.get("authorization");
   const contentType = request.headers.get("content-type");

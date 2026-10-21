@@ -351,6 +351,8 @@ const sw = {
     cropTitle: "Mapendekezo ya mazao",
     livestockTitle: "Mapendekezo ya mifugo",
     liveRecommendationIntro: "Mapendekezo yatatumia wasifu wa shamba uliohifadhiwa na kutumwa kwa simu yako kupitia SMS.",
+    sendSmsNow: "Tuma hii kwenye simu yangu kwa SMS",
+    sendingSms: "Inatuma…",
     generateAndSms: "Tengeneza pendekezo na utume SMS",
     generatingRecommendation: "Inatengeneza na kutuma…",
     smsSubmitted: "Majibu ya mtoa huduma wa SMS: {status}",

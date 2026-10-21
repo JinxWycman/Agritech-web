@@ -95,6 +95,7 @@ export type ResourceService<T> = {
 
 export type RecommendationService = {
   listSaved(): Promise<LiveRecommendation[]>;
+  sendSms(id: string): Promise<{ status: string; reason?: string }>;
   generate(kind: "crop" | "livestock", answers: Record<string, string | number | boolean | null>): Promise<GeneratedLiveRecommendation>;
   getForFarm(
     kind: "crop" | "livestock",

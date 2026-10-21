@@ -342,6 +342,7 @@ export const apiRequestSettingsService: RequestSettingsService = {
 
 export const apiRecommendationService: RecommendationService = {
   async listSaved() { return getSavedRecommendations(); },
+  async sendSms(id) { return farmerApi<{ status: string; reason?: string }>(`/recommendations/${encodeURIComponent(id)}/sms`, { method: "POST" }); },
   async generate(kind, answers) { return generateRecommendation(kind, answers); },
   async getForFarm() { return null; },
 };

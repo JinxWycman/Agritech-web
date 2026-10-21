@@ -222,6 +222,7 @@ function assertBusinessSuccess(): void {
 
 export const mockRecommendationService: RecommendationService = {
   async listSaved() { await delay(); return []; },
+  async sendSms() { await delay(); return { status: "queued" }; },
   async generate() { throw new Error("Live SMS recommendations are available when connected to the API."); },
   async getForFarm(kind, point, conditions) {
     await delay();

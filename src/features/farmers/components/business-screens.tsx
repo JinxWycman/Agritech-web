@@ -230,6 +230,18 @@ function LiveRecommendationBody({ rec, locale }: { rec: LiveRec; locale: Locale 
   );
 }
 
+function SendSmsButton({ id }: { id: string }) {
+  const t = useTranslations("business");
+  const send = useMutation({ mutationFn: () => recommendationService.sendSms(id) });
+  return (
+    <div className="space-y-2">
+      <button type="button" onClick={() => send.mutate()} disabled={send.isPending} className="min-h-12 rounded-xl border border-forest-700 px-4 font-semibold text-forest-800 disabled:opacity-60">{send.isPending ? t("sendingSms") : t("sendSmsNow")}</button>
+      {send.isError && <p role="alert" className="text-sm text-red-700">{send.error instanceof Error ? send.error.message : t("smsSubmissionFailed")}</p>}
+      {send.data && <p aria-live="polite" className="rounded-lg bg-[var(--surface-muted)] p-3 text-sm">{send.data.status === "error" ? send.data.reason ?? t("smsSubmissionFailed") : t("smsSubmitted", { status: send.data.status.toLowerCase() })}</p>}
+    </div>
+  );
+}
+
 export function RecommendationScreen({ kind }: { kind: "crop" | "livestock" }) {
   const t = useTranslations("business");
   const locale = localeOf(useLocale());
@@ -279,6 +291,7 @@ export function RecommendationScreen({ kind }: { kind: "crop" | "livestock" }) {
                 ? generate.data.sms.reason ?? t("smsSubmissionFailed")
                 : t("smsSubmitted", { status: generate.data.sms.status.toLowerCase() })}
             </p>
+            {generate.data.recommendation.id && <SendSmsButton id={generate.data.recommendation.id} />}
           </article>
         )}
         {queryData.saved.filter((item) => !item.recommendation_type || item.recommendation_type.toLowerCase() === kind).map((item) => {
@@ -287,6 +300,7 @@ export function RecommendationScreen({ kind }: { kind: "crop" | "livestock" }) {
           <article key={item.id} className="panel space-y-3 p-4">
             {rec ? <LiveRecommendationBody rec={rec} locale={locale} /> : <><h2 className="font-bold">{item.title}</h2>
             <p className="whitespace-pre-wrap text-sm">{item.recommendation_text}</p></>}
+            <SendSmsButton id={item.id} />
             {item.sms_deliveries.length > 0 && (
               <ul className="space-y-1">{item.sms_deliveries.map((delivery, index) => (
                 <li key={`${delivery.submitted_at}-${index}`} className="rounded bg-[var(--surface-muted)] px-3 py-2 text-xs">

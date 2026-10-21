@@ -351,6 +351,8 @@ const en = {
     cropTitle: "Crop recommendations",
     livestockTitle: "Livestock recommendations",
     liveRecommendationIntro: "Recommendations are generated from your saved farm profile and sent to your phone by SMS.",
+    sendSmsNow: "Send this to my phone by SMS",
+    sendingSms: "Sending…",
     generateAndSms: "Generate recommendation and send SMS",
     generatingRecommendation: "Generating and sending…",
     smsSubmitted: "SMS provider result: {status}",
