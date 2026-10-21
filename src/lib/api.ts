@@ -22,7 +22,11 @@ export type Page<T> = {
 
 let accessToken: string | null = null;
 let farmerAccessToken: string | null = null;
+let farmerRefreshToken: string | null = null;
 let refreshInFlight: Promise<string | null> | null = null;
+let farmerRefreshInFlight: Promise<string | null> | null = null;
+
+const FARMER_REFRESH_KEY = "agritech_farmer_refresh";
 
 function forgetLegacyStorage() {
   if (typeof window === "undefined") return;
@@ -57,10 +61,21 @@ export function setSession(nextAccessToken: string, role: string) {
   writePortalRoleCookie(role === "platform_admin" ? "admin" : "expert");
 }
 
-export function setFarmerSession(nextAccessToken: string) {
+export function setFarmerSession(nextAccessToken: string, nextRefreshToken?: string) {
   farmerAccessToken = nextAccessToken;
-  if (typeof window !== "undefined") sessionStorage.setItem(FARMER_KEY, nextAccessToken);
+  if (typeof window !== "undefined") {
+    sessionStorage.setItem(FARMER_KEY, nextAccessToken);
+    if (nextRefreshToken) {
+      farmerRefreshToken = nextRefreshToken;
+      sessionStorage.setItem(FARMER_REFRESH_KEY, nextRefreshToken);
+    }
+  }
   writePortalRoleCookie("farmer");
+}
+
+function getFarmerRefreshToken(): string | null {
+  if (!farmerRefreshToken && typeof window !== "undefined") farmerRefreshToken = sessionStorage.getItem(FARMER_REFRESH_KEY);
+  return farmerRefreshToken;
 }
 
 function writePortalRoleCookie(role: string) {
@@ -80,8 +95,10 @@ export function clearSession() {
 
 export function clearFarmerSession() {
   farmerAccessToken = null;
+  farmerRefreshToken = null;
   if (typeof window !== "undefined") {
     sessionStorage.removeItem(FARMER_KEY);
+    sessionStorage.removeItem(FARMER_REFRESH_KEY);
     document.cookie = "farmer_role=; Path=/; Max-Age=0; SameSite=Lax";
     document.cookie = "portal_role=; Path=/; Max-Age=0; SameSite=Lax";
   }
@@ -238,12 +255,12 @@ export async function loginFarmer(phone_number: string, pin: string) {
     throw new ApiError(await readDetail(response, "Login failed"), response.status);
   }
 
-  const data = (await response.json()) as { access_token?: string; token_type?: string };
+  const data = (await response.json()) as { access_token?: string; refresh_token?: string; token_type?: string; expires_in?: number; role?: string };
   if (!data.access_token) {
     throw new ApiError("This account cannot open the farmer portal.", 403);
   }
 
-  setFarmerSession(data.access_token);
+  setFarmerSession(data.access_token, data.refresh_token);
   return data;
 }
 
@@ -374,6 +391,32 @@ export function buildExpertRequestPayload({
   };
 }
 
+async function refreshFarmerAccess(): Promise<string | null> {
+  if (farmerRefreshInFlight) return farmerRefreshInFlight;
+  farmerRefreshInFlight = (async () => {
+    const token = getFarmerRefreshToken();
+    if (!token) return null;
+    let response: Response;
+    try {
+      response = await timedFetch(PROXY + "/auth/refresh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: token }),
+      });
+    } catch {
+      return null;
+    }
+    if (!response.ok) return null;
+    const data = (await response.json()) as { access_token?: string; refresh_token?: string };
+    if (!data.access_token) return null;
+    setFarmerSession(data.access_token, data.refresh_token);
+    return data.access_token;
+  })().finally(() => {
+    farmerRefreshInFlight = null;
+  });
+  return farmerRefreshInFlight;
+}
+
 export async function farmerApi<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
   const token = getFarmerAccessToken();
   if (!token) {
@@ -397,6 +440,8 @@ export async function farmerApi<T>(path: string, options: RequestInit = {}, retr
   }
 
   if (response.status === 401 && !retried) {
+    const next = await refreshFarmerAccess();
+    if (next) return farmerApi<T>(path, options, true);
     clearFarmerSession();
     expireSession();
     throw new ApiError("Session expired. Sign in again.", 401);

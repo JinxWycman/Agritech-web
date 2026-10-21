@@ -9,6 +9,7 @@ describe("allowedBackendPath", () => {
     assert.equal(allowedBackendPath(["staff", "me"]), "/staff/me");
     assert.equal(allowedBackendPath(["staff", "logout"]), "/staff/logout");
     assert.equal(allowedBackendPath(["auth", "login"]), "/auth/login");
+    assert.equal(allowedBackendPath(["auth", "refresh"]), "/auth/refresh");
     assert.equal(allowedBackendPath(["auth", "me"]), "/auth/me");
     assert.equal(allowedBackendPath(["farmers", "me"]), "/farmers/me");
     assert.equal(allowedBackendPath(["farmers", "change-pin"]), "/farmers/change-pin");
@@ -59,6 +60,8 @@ describe("allowedBackendMethod", () => {
     assert.equal(allowedBackendMethod("PUT", "/farmers/me"), true);
     assert.equal(allowedBackendMethod("DELETE", "/farmer-crops/123e4567-e89b-12d3-a456-426614174000"), true);
     assert.equal(allowedBackendMethod("POST", "/recommendations/generate"), true);
+    assert.equal(allowedBackendMethod("POST", "/auth/refresh"), true);
+    assert.equal(allowedBackendMethod("GET", "/auth/refresh"), false);
     assert.equal(allowedBackendMethod("POST", "/counties"), false);
     assert.equal(allowedBackendMethod("POST", "/auth/me"), false);
   });

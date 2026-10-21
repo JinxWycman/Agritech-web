@@ -12,6 +12,7 @@ const STAFF_PATHS = new Set([
 
 const FARMER_PATHS = new Set([
   "/auth/login",
+  "/auth/refresh",
   "/auth/me",
   "/farmers/login",
   "/farmers/register",
@@ -90,7 +91,7 @@ export function allowedBackendPath(segments: string[]): string | null {
 export function allowedBackendMethod(method: string, path: string): boolean {
   const verb = method.toUpperCase();
   if (path.startsWith("/admin/")) return ["GET", "POST", "PATCH", "DELETE"].includes(verb);
-  if (path === "/auth/login" || path === "/farmers/login" || path === "/farmers/register" || path === "/staff/login" || path === "/staff/refresh" || path === "/staff/logout" || path === "/expert-request") return verb === "POST";
+  if (path === "/auth/login" || path === "/auth/refresh" || path === "/farmers/login" || path === "/farmers/register" || path === "/staff/login" || path === "/staff/refresh" || path === "/staff/logout" || path === "/expert-request") return verb === "POST";
   if (path === "/farmer-crops" || path === "/farmer-crops/" || path === "/farmer-livestock" || path === "/farmer-livestock/") return ["GET", "POST"].includes(verb);
   if (path === "/market-prices" || path === "/market-prices/") return ["GET", "POST"].includes(verb);
   if (path === "/market-prices/scrape") return verb === "POST";
