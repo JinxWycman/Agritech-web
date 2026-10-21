@@ -158,23 +158,29 @@ async function timedFetch(url: string, init: RequestInit): Promise<Response> {
 async function refreshAccess(): Promise<string | null> {
   if (refreshInFlight) return refreshInFlight;
   refreshInFlight = (async () => {
-    const token = getStaffRefreshToken();
-    if (!token) return null;
+    const storedToken = getStaffRefreshToken();
+    // Try /auth/refresh with stored token first (admins who logged in via /auth/login).
+    // Fall back to /staff/refresh which reads the HttpOnly cookie (legacy staff login).
+    const [endpoint, body] = storedToken
+      ? ["/auth/refresh", JSON.stringify({ refresh_token: storedToken })]
+      : ["/staff/refresh", JSON.stringify({})];
     let response: Response;
     try {
-      response = await timedFetch(PROXY + "/auth/refresh", {
+      response = await timedFetch(PROXY + endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh_token: token }),
+        body,
       });
     } catch {
       return null;
     }
     if (!response.ok) return null;
     const data = (await response.json()) as { access_token?: string; refresh_token?: string; role?: string };
-    const role = data.role ?? getCookie("staff_role");
-    if (!data.access_token || !isStaffRole(role)) return null;
-    setSession(data.access_token, role, data.refresh_token);
+    const rawRole = data.role ?? getCookie("staff_role");
+    // Map web role values to staff role names.
+    const mappedRole = rawRole === "admin" ? "platform_admin" : rawRole === "expert" ? "officer" : rawRole;
+    if (!data.access_token || !isStaffRole(mappedRole)) return null;
+    setSession(data.access_token, mappedRole, data.refresh_token);
     return data.access_token;
   })().finally(() => {
     refreshInFlight = null;
@@ -251,6 +257,10 @@ async function authenticate(phone_number: string, pin: string): Promise<AuthToke
   if (data.role === "farmer") {
     clearSession();
     setFarmerSession(data.access_token, data.refresh_token);
+  } else if (data.role === "admin" || data.role === "expert") {
+    // /auth/login returns "admin"/"expert"; map to staff role names so setSession accepts them.
+    clearFarmerSession();
+    setSession(data.access_token, data.role === "admin" ? "platform_admin" : "officer", data.refresh_token);
   } else if (isStaffRole(data.role)) {
     clearFarmerSession();
     setSession(data.access_token, data.role, data.refresh_token);
