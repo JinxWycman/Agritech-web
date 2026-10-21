@@ -106,6 +106,7 @@ function RecommendationCard({ recommendation, locale }: { recommendation: Recomm
             case "rainfallFit": message = t("reasons.rainfallFit", { rainfall: Number(reason.params?.rainfall ?? 0) }); break;
             case "ndviTrend": message = t("reasons.ndviTrend", { trend: trendLabel }); break;
             case "rainfallTrend": message = t("reasons.rainfallTrend", { trend: trendLabel }); break;
+            default: message = reason.key;
           }
           return <li key={`${reason.key}-${index}`}>{message}</li>;
         })}</ul>
@@ -189,8 +190,49 @@ export function RecommendationScreen({ kind }: { kind: "crop" | "livestock" }) {
       {getDataMode() === "api" && <section className="space-y-3">
         <button type="button" onClick={() => generate.mutate()} disabled={generate.isPending} className="min-h-12 rounded-xl bg-forest-700 px-4 font-semibold text-white disabled:opacity-60">{generate.isPending ? t("generatingRecommendation") : t("generateAndSms")}</button>
         {generate.isError && <ErrorState onRetry={() => generate.mutate()} message={generate.error instanceof Error ? generate.error.message : t("loadError")} />}
-        {generate.data && <article className="panel space-y-2 p-4" aria-live="polite"><h2 className="text-lg font-bold">{generate.data.recommendation.primary.name}</h2><p>{generate.data.recommendation.why_fit}</p>{generate.data.recommendation.alternatives.length > 0 && <p>{t("alternatives")}: {generate.data.recommendation.alternatives.map((item) => item.name).join(", ")}</p>}{generate.data.recommendation.actions.length > 0 && <ul className="list-disc pl-5">{generate.data.recommendation.actions.map((action, index) => <li key={index}>{action}</li>)}</ul>}<p className="rounded-lg bg-[var(--surface-muted)] p-3 text-sm">{generate.data.sms.status === "error" ? generate.data.sms.reason ?? t("smsSubmissionFailed") : t("smsSubmitted", { status: generate.data.sms.status })}</p></article>}
-        {queryData.saved.map((item) => <article key={item.id} className="panel space-y-2 p-4"><h2 className="font-bold">{item.title}</h2><p className="text-sm">{item.recommendation_text}</p>{item.sms_deliveries.map((delivery, index) => <p key={`${delivery.submitted_at}-${index}`} className="text-xs text-[var(--muted)]">{t("smsDeliveryStatus", { status: delivery.status })}{delivery.failure_reason ? `: ${delivery.failure_reason}` : ""}</p>)}</article>)}
+        {generate.data && (
+          <article className="panel space-y-4 p-4" aria-live="polite">
+            <header>
+              <p className="text-sm font-semibold uppercase tracking-wide text-forest-800">{generate.data.recommendation.kind === "crop" ? t("kind.crop") : t("kind.breed")}</p>
+              <h2 className="mt-1 text-xl font-bold">{generate.data.recommendation.primary.name}</h2>
+            </header>
+            <section>
+              <h3 className="font-semibold">{t("whySuggested")}</h3>
+              <p className="mt-1 text-sm">{generate.data.recommendation.why_fit}</p>
+            </section>
+            {generate.data.recommendation.alternatives.length > 0 && (
+              <section>
+                <h3 className="font-semibold">{t("alternatives")}</h3>
+                <ol className="mt-1 list-decimal space-y-1 pl-5 text-sm">{generate.data.recommendation.alternatives.map((item, index) => <li key={index}>{t("rankedItem", { rank: index + 1, name: item.name })}</li>)}</ol>
+              </section>
+            )}
+            {generate.data.recommendation.actions.length > 0 && (
+              <section>
+                <h3 className="font-semibold">{t("tips")}</h3>
+                <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">{generate.data.recommendation.actions.map((action, index) => <li key={index}>{action}</li>)}</ul>
+              </section>
+            )}
+            <p className="rounded-lg bg-[var(--surface-muted)] p-3 text-sm">
+              {generate.data.sms.status === "error"
+                ? generate.data.sms.reason ?? t("smsSubmissionFailed")
+                : t("smsSubmitted", { status: generate.data.sms.status.toLowerCase() })}
+            </p>
+          </article>
+        )}
+        {queryData.saved.map((item) => (
+          <article key={item.id} className="panel space-y-3 p-4">
+            <h2 className="font-bold">{item.title}</h2>
+            <p className="whitespace-pre-wrap text-sm">{item.recommendation_text}</p>
+            {item.sms_deliveries.length > 0 && (
+              <ul className="space-y-1">{item.sms_deliveries.map((delivery, index) => (
+                <li key={`${delivery.submitted_at}-${index}`} className="rounded bg-[var(--surface-muted)] px-3 py-2 text-xs">
+                  {t("smsDeliveryStatus", { status: delivery.status.toLowerCase() })}
+                  {delivery.failure_reason && <span className="ml-1 text-red-700">— {delivery.failure_reason}</span>}
+                </li>
+              ))}</ul>
+            )}
+          </article>
+        ))}
       </section>}
       {!recommendations.length
         ? <EmptyState title={t("recommendationsEmptyTitle")} text={t("recommendationsEmptyText")} />

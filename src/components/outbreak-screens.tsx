@@ -24,7 +24,7 @@ function OutbreakAlertList({ alerts }: { alerts: OutbreakAlert[] }) {
   return <ul className="space-y-3">{alerts.map((alert) => <li key={alert.id} className="panel space-y-2 p-4">
     <p className="font-semibold">{pickLocalized(alert.message, locale)}</p>
     <p className="text-sm">{t(`symptom.${alert.symptomCode}`)} · {t(`issue.${alert.issueType}`)}{alert.subjectKey ? ` · ${t(`subject.${alert.subjectKey}`)}` : ""}</p>
-formatDate(alert.createdAt, locale)
+    <p className="text-sm">{formatDate(alert.createdAt, locale)}</p>
     <p className="text-sm">{t("alertRecipients", { count: alert.recipientCount })}</p>
   </li>)}</ul>;
 }
@@ -88,7 +88,7 @@ function CellSummary({ cell, selected, onClick }: { cell: SignalCell; selected: 
   return <li><button type="button" aria-pressed={selected} onClick={onClick} className={`w-full rounded-xl border p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest-600 ${cell.flagged ? "border-red-700" : "border-[var(--border)]"} ${selected ? "bg-[var(--surface-muted)]" : ""}`}>
     <span className="font-semibold">{cell.count} {t("reports")}{cell.flagged ? ` · ${t("flagged")}` : ""}</span>
     <span className="block text-sm">{t(`issue.${cell.issueType}`)} · {t(`symptom.${symptom}`)}{cell.subjectKey ? ` · ${t(`subject.${cell.subjectKey}`)}` : ""}</span>
-    <span className="block text-xs text-[var(--muted)]">{cell.weekStart} · {cell.centerLat.toFixed(2)}, {cell.centerLng.toFixed(2)}</span>
+    <span className="block text-xs text-[var(--muted)]">{formatDate(cell.weekStart, locale)} · {cell.centerLat.toFixed(2)}, {cell.centerLng.toFixed(2)}</span>
   </button></li>;
 }
 

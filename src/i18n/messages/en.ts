@@ -588,6 +588,7 @@ const en = {
     notificationsEmptyText: "New expert request updates and nearby alerts will appear here.",
     notificationsError: "Notifications could not be loaded. Try again.",
     actionError: "That action could not be completed. Try again.",
+    readStateUnavailable: "Notifications are live. Read-state updates are not yet supported by the backend.",
     subscriptionTitle: "Subscription and payment",
     paymentSimulation: "Simulated: no money is charged, and no real phone number is stored. Only the last four digits are kept.",
     currentPlan: "Current plan",

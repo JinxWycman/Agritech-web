@@ -588,6 +588,7 @@ const sw = {
     notificationsEmptyText: "Taarifa mpya za maombi ya wataalamu na arifa za karibu zitaonekana hapa.",
     notificationsError: "Arifa hazikuweza kupakiwa. Jaribu tena.",
     actionError: "Kitendo hakikuweza kukamilika. Jaribu tena.",
+    readStateUnavailable: "Arifa zinapatikana moja kwa moja. Kusasisha hali ya kusoma bado hakuungwa mkono na seva.",
     subscriptionTitle: "Usajili na malipo",
     paymentSimulation: "Imeigwa: hakuna pesa inayotozwa na nambari halisi ya simu haihifadhiwi. Tarakimu nne za mwisho pekee ndizo huhifadhiwa.",
     currentPlan: "Mpango wa sasa",

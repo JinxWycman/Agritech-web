@@ -152,7 +152,7 @@ export function PortalShell({ role, children }: { role: UserRole; children: Reac
             <nav aria-label={t(`nav.${role}`)} className="nav-scroll mt-4 flex gap-2 overflow-x-auto md:hidden">
               {navigation[role].map((item) => {
                 const href = `${roots[role]}${item.suffix}`;
-                return <Link key={item.key} href={href} className={`whitespace-nowrap rounded-md border px-3 py-2 text-xs ${pathname === href ? "border-forest-700 bg-forest-700 font-semibold text-white" : "border-[var(--border)] bg-[var(--surface)]"}`}>{t(`nav.${item.key}`)}{!isBuiltRoute(href) ? ` Â· ${t("common.planned", { phase: item.phase })}` : ""}</Link>;
+                return <Link key={item.key} href={href} className={`whitespace-nowrap rounded-md border px-3 py-2 text-xs ${pathname === href ? "border-forest-700 bg-forest-700 font-semibold text-white" : "border-[var(--border)] bg-[var(--surface)]"}`}>{t(`nav.${item.key}`)}{!isBuiltRoute(href) ? ` · ${t("common.planned", { phase: item.phase })}` : ""}</Link>;
               })}
             </nav>
           </header>

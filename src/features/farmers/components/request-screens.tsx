@@ -20,7 +20,7 @@ export function FarmerRequestsScreen() {
   if (query.isError) return <RequestError retry={() => void query.refetch()} />;
   const requests = query.data ?? [];
   return <div className="space-y-5"><div className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-2xl font-bold">{t("farmerTitle")}</h1><Link href="/app/requests/new" className="inline-flex min-h-12 items-center rounded-xl bg-forest-700 px-4 font-semibold text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-forest-500/40">{t("newRequest")}</Link></div>
-    {requests.length === 0 ? <EmptyState title={t("farmerEmptyTitle")} text={t("farmerEmptyText")} /> : <ul className="space-y-3">{requests.map((request) => <li key={request.id} className="panel p-4"><Link href={`/app/requests/${request.id}`} className="block rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest-600"><p className="font-semibold">{t(`issue.${request.issueType}`)} ? {request.referenceCode}</p><p className="my-2 text-sm text-[var(--muted)]">{t(`urgency.${request.urgency}`)}</p><RequestSummary request={request} /></Link></li>)}</ul>}
+    {requests.length === 0 ? <EmptyState title={t("farmerEmptyTitle")} text={t("farmerEmptyText")} /> : <ul className="space-y-3">{requests.map((request) => <li key={request.id} className="panel p-4"><Link href={`/app/requests/${request.id}`} className="block rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest-600"><p className="font-semibold">{t(`issue.${request.issueType}`)} · {request.referenceCode}</p><p className="my-2 text-sm text-[var(--muted)]">{t(`urgency.${request.urgency}`)}</p><RequestSummary request={request} /></Link></li>)}</ul>}
   </div>;
 }
 
